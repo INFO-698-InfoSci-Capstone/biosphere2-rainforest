@@ -1,0 +1,743 @@
+---
+title: "Data preprocessing - Analysis"
+author: "Sai Laasya Gorantla"
+date: "2025-02-13"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+
+### Installing libraries
+if(!require('pacman'))
+  install.packages('pacman')
+
+## Loading libraries
+pacman :: p_load(
+  RColorBrewer,
+  plotly,
+  janitor,
+  tidytext,
+  patchwork,
+  colorspace,
+  dplyr,
+  dbscan,
+  lubridate,
+  readr,
+  GGally,
+  reshape2,
+  tidyr,
+  FNN)
+
+```
+
+# Carbondioxide Calibarations
+
+Using the scada data from the scada mountain tower.
+
+```{r carbondioxide}
+
+scada <- read.csv('data/SCADA__MTNTWRCO2.csv', skip = 2)
+
+
+## Reading the first 5 rows
+head(scada)
+
+# Check for missing values in each column
+colSums(is.na(scada))
+
+##Missing values
+sum(is.na(scada))
+```
+
+The carbondioxide that the sensors detect, shows that all the columns doesn't have any missing values in it. So, it is not necessary to handle missing values. 
+
+
+Counting the number as the readings takes place for every 15 min by sensor which means 96 per day.
+
+
+```{r}
+
+# Convert TIMESTAMP to a datetime format
+scada <- scada %>% mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S"))
+
+# Filter for the year 2020
+scada1 <- scada %>% filter(year(TIMESTAMP) == 2020)
+
+                           
+
+##  Counting the number as the readings takes place for every 15 min
+readings_per_day <- scada1 |> group_by(Date = date(TIMESTAMP)) %>% summarize(Readings = n())
+
+##Missing date readings
+missing_day <- readings_per_day |> filter(Readings != 96)
+
+cat("Missing dates")
+print(missing_day)
+```
+
+
+
+For every 15 min the sesnors takes the value for Carbondioxide that is released so which mean for every hour it will have 4 values for the entire day it will have 96 values.
+
+The readings_per_day will count the number of readings per day 
+
+On the day of 2020-02-25 there are only 95 which means they lost a value. I can see the that at the timestamp 09:30 it wasn't recorded. The trendflag at 09:45 seems to be  1 and the trendflag has the value{start}, dont what was starting at that moment.
+
+If I have to fill the missing row, I am taking the mean of value from scada1 which considers the data for the year 2020 year only.
+
+```{r}
+
+# Check the data type of the column
+class(scada1$VALUE)
+
+# Calculate the mean value for the year 2020
+mean_value <- mean(scada1$VALUE)
+print(mean_value)
+```
+The mean value for the VALUE column is 428.1858.
+
+```{r}
+
+# Group by day and calculate the mean value per day
+mean_value_per_day <- scada1 |>
+  group_by(Date = date(TIMESTAMP)) |> 
+  summarize(Mean = mean(VALUE))
+
+# View the result
+print(mean_value_per_day)
+
+# Plot daily mean values
+ggplot(mean_value_per_day, aes(x = Date, y = Mean)) +
+  geom_line(color = "steelblue") +
+  geom_point(color = "red") +
+  labs(title = "Daily Mean Sensor Values",
+       x = "Date",
+       y = "Mean Value") +
+  theme_minimal()
+```
+```{r}
+##Adding the new column mean_value_per_day to the readings per day column
+# Join the mean values with the existing readings_per_day
+readings_per_day <- readings_per_day |> 
+  left_join(mean_value_per_day, by = "Date")
+
+```
+
+
+```{r}
+
+# Extract the VALUE column for outlier detection
+data_knn <- as.matrix(scada1$VALUE)
+
+# Detecting outliers using KNN (k = 6)
+knn_distances <- kNNdist(data_knn, k = 6)
+
+# Use the 95th percentile as the threshold
+outlier_threshold <- quantile(knn_distances, 0.95)
+outliers <- knn_distances > outlier_threshold
+
+# outlier information to the original data
+scada1$Is_Outlier <- outliers
+
+# Visualize the outliers
+ggplot(scada1, aes(x = TIMESTAMP, y = VALUE, color = Is_Outlier)) +
+  geom_point() +
+  labs(title = "Outliers Detected Using KNN",
+       x = "Timestamp",
+       y = "Value") +
+  theme_minimal()
+
+``` 
+#Outliers
+Calculating the outliers using KNN method and considering the value and using the threshold as 95 percentile
+
+
+# Relative Humidity for the North East Tower.
+```{r}
+
+## Reading the humidity data file by skipping the two rows and put the header as False for not considering the name of the column
+humidity <- read.csv("data/NE_Tower_Relative humidity.csv", skip = 4, header = FALSE)
+
+
+# Taking off the null column the V7 by selecting 6 columns only
+humidity <- humidity[, 1:6]
+
+
+
+# Reassigning the column names as needed
+colnames(humidity) <- c("DateTime", "TRF_NETower_100_HMP45", "TRF_NETower_300_HMP45","TRF_NETower_700_HMP45","TRF_NETower_1300_HMP45","TRF_NETower_2000_HMP45")
+
+
+```
+
+##Checking for the top 5 rows and also null values in the entire table and also for each column.
+
+```{r humidity}
+
+## Reading the first 5 rows
+head(humidity)
+
+# Check for missing values in each column
+colSums(is.na(humidity))
+
+##Missing values
+sum(is.na(humidity))
+
+```
+## The above code says that the file doesn't have any null values in the North East Tower - the relative humidity. To make sure on then null values in the entire table and also in each of the column it's zero.
+
+
+
+```{r}
+## Filtering out the '2020' data from humidity dataframe
+humidity1 <- humidity |> filter(year(DateTime) == 2020)
+                           
+                           
+##  Counting the number as the readings takes place for every 15 min
+readings_per_day_humid <- humidity1 |> group_by(Date = date(DateTime)) %>% summarize(Readings = n())
+
+##Missing date readings
+missing_day_humid <- readings_per_day_humid |> filter(Readings != 96)
+
+cat("Missing dates")
+print(missing_day_humid)
+```
+##This clarifies that there is no missing data in the Readings column which means they have recorded every single value through the sensors. So there is no need to perform any mean value to it.
+
+
+
+# Performing calibration for the North East Sensors that is adding new columns
+
+```{r}
+
+#Generarting new columns for the humidity dataframe
+humidity1 <- humidity1 %>%
+  mutate(
+    RH_NE_100_Corr  = TRF_NETower_100_HMP45  * 1.038 + 1.0,
+    RH_NE_300_Corr  = TRF_NETower_300_HMP45  * 0.986 - 2.1,
+    RH_NE_700_Corr  = TRF_NETower_700_HMP45  * 1.055 - 6.8,
+     RH_NE_1300_Corr = TRF_NETower_1300_HMP45 * 0.9213 + 5.6,
+    RH_NE_2000_Corr = TRF_NETower_2000_HMP45 * 0.9889 + 3.0,
+   )
+
+# View the updated dataframe
+head(humidity1)
+```
+## Performed the calculation as byu taking the formula and it's the value for each column that is each sensor at particular heights.
+
+```{r}
+
+# Select columns starting with "RH"
+rh_columns <- grep("RH", names(humidity1), value = TRUE)
+
+# Subset the data using the selected column names
+rh_data <- humidity1[, rh_columns]
+
+# Calculate the mean of those columns
+humid_mean <- colMeans(rh_data)
+
+# Print the result
+cat("Mean of the columns in the realtive humidity columns of the dataframe")
+print(humid_mean)
+
+
+
+
+```
+
+
+#Outliers for the North East Tower of Relative Humidity
+```{r, outliers, warning= FALSE}
+
+# Select columns starting with "RH"
+rh_columns <- grep("^RH", names(humidity1), value = TRUE)
+
+# Considering values of those columns
+humidity_rh <- humidity1[, rh_columns]
+
+# Function to detect outliers using KNN
+detect_outliers <- function(data) {
+  
+  # Compute KNN distances 
+  knn_dist <- knn.dist(as.matrix(data), k = 6)
+  
+  # Calculate the 95th percentile of distances for each point
+  quantile_distances <- apply(knn_dist, 1, function(x) quantile(x, 0.95))
+  
+  # Identify outliers as points where the distance exceeds the 95th percentile
+  outliers <- quantile_distances > quantile(quantile_distances, 0.95)
+  
+  return(outliers)
+}
+
+# Initialize a list to store outlier results
+outlier_results <- list()
+
+# Detect outliers for each column
+for (col in rh_columns) {
+  column_data <- humidity_rh[[col]]
+  outliers <- detect_outliers(column_data)
+  outlier_results[[col]] <- outliers
+}
+
+# Visualize outliers for each column
+for (col in rh_columns) {
+  # Create a data frame for plotting
+  plot_data <- data.frame(
+    Index = 1:nrow(humidity_rh),
+    Value = humidity_rh[[col]],
+    Outlier = outlier_results[[col]]
+  )
+  
+  # Plot the data with outliers highlighted
+  p <- ggplot(plot_data, aes(x = Index, y = Value, color = Outlier)) +
+    geom_point() +
+    scale_color_manual(values = c("black", "red")) +
+    labs(title = paste("Outliers in", col),
+         x = "Index",
+         y = "Value") +
+    theme_minimal()
+  
+  print(p)
+}
+
+```
+
+
+
+# North East Temperature Calibrations
+```{r}
+
+##Importing the temperature dataset
+temperature <- read.csv('data/NE_TowerTemperature.csv', skip = 4, header = FALSE)
+
+# Taking off the null column the V7 by selecting 6 columns only
+temperature <- temperature[, 1:6]
+
+
+# Reassigning the column names as needed
+colnames(temperature) <- c("DateTime", "TRF_NETower_100_HMP45", "TRF_NETower_300_HMP45","TRF_NETower_700_HMP45","TRF_NETower_1300_HMP45","TRF_NETower_2000_HMP45")
+
+```
+
+
+#Reading the top 5 and missing values in NE - Temperature
+```{r}
+## Reading the first 5 rows
+head(temperature)
+
+# Check for missing values in each column
+colSums(is.na(temperature))
+
+##Missing values
+sum(is.na(temperature))
+
+```
+
+## The above code says that the file doesn't have any null values in the North East Tower - the temperature. Making sure twice on null values for the entire table and also in each of the column.
+
+
+```{r}
+
+
+## Filtering out the '2020' data from temperature dataframe
+temperature1 <- temperature |> filter(year(DateTime) == 2020)
+                           
+                           
+##  Counting the number as the readings takes place for every 15 min
+readings_per_day_temp<- temperature1 |> group_by(Date = date(DateTime)) %>% summarize(Readings = n())
+
+##Missing date readingsof the temperature
+missing_day_temp <- readings_per_day_temp |> filter(Readings != 96)
+
+cat("Missing dates on NE Temperature")
+print(missing_day_temp)
+```
+
+##This clarifies that there is no missing data in the Readings column which means they have recorded every single value through the sensors. So there is no need to perform any mean value to it.
+
+```{r}
+
+#Generating new columns for the temperature dataframe
+
+temperature1 <-temperature1 %>%
+  mutate(
+    T_NE_100_Corr  = TRF_NETower_100_HMP45 * 1.032 - 0.58,
+    T_NE_300_Corr  = TRF_NETower_300_HMP45 * 0.9883 + 0.6049,
+    T_NE_700_Corr  = TRF_NETower_700_HMP45 * 1.045 - 0.88,
+    T_NE_1300_Corr = TRF_NETower_1300_HMP45 * 1.007  - 0.08,
+    T_NE_2000_Corr = TRF_NETower_2000_HMP45 * 0.9988 -0.39
+   )
+
+# View the updated dataframe
+head(temperature1)
+```
+##Performed the calculation as byu taking the formula and it's the value for each column that is each sensor at particular heights of the temperature dataframe.
+
+#Average by each height
+```{r, average}
+
+# Select columns starting with "T_NE"
+t_columns <- grep("T_NE", names(temperature1), value = TRUE)
+
+# Subset the data using the selected column names
+t_data <- temperature1[, t_columns]
+
+# Calculate the mean of those columns
+temp_mean <- colMeans(t_data)
+
+# Print the result
+cat("Mean of the columns in the temperature dataframe")
+print(temp_mean)
+
+```
+
+
+#Finally finding out the outliers of the NE-Temperature
+```{r}
+
+# Select the corrected columns starting with "T_NE"
+temp_columns <- grep("^T_NE", names(temperature1), value = TRUE)
+
+# Considering values of those columns
+temp_df <- temperature1[, temp_columns]
+
+# Function to detect outliers using KNN
+detect_outlier_temp <- function(data) {
+  
+  # Compute KNN distances
+  knn_dist_temp <- knn.dist(as.matrix(data), k = 6)
+  
+  # Calculate the 95th percentile of distances for each point
+  quantile_dist_temp <- apply(knn_dist_temp, 1, function(x) quantile(x, 0.95))
+  
+  # Identify outliers as points where the distance exceeds the 95th percentile
+  outlier_temp <- quantile_dist_temp > quantile(quantile_dist_temp, 0.95)
+  
+  return(outlier_temp)
+}
+
+# Initialize a list to store outlier results
+outlier_results <- list()
+
+# Detect outliers for each column
+for (col in temp_columns) {
+  column_data <- temp_df[[col]]
+  outliers <- detect_outlier_temp(column_data)
+  outlier_results[[col]] <- outliers
+}
+
+# Visualize outliers for each column
+for (col in temp_columns) {  # Corrected variable name from t_columns to temp_columns
+  # Create a data frame for plotting
+  plot_data <- data.frame(
+    Index = 1:nrow(temp_df),  # Corrected variable name from temperature_t to temp_df
+    Value = temp_df[[col]],   # Corrected variable name from temperature_t to temp_df
+    Outlier = outlier_results[[col]]
+  )
+  
+  # Plot the data with outliers highlighted
+  p <- ggplot(plot_data, aes(x = Index, y = Value, color = Outlier)) +
+    geom_point() +
+    scale_color_manual(values = c("black", "red")) +
+    labs(title = paste("Outliers in", col),
+         x = "Index",
+         y = "Value") +
+    theme_minimal()
+  
+  print(p)
+}
+```
+
+#Each day value according to the zone wise
+
+### The whole system of the set up for the biosphere 2 is divided into three zones.
+#Zone 1 - The south tower for 1m and 3m
+   
+#SOUTH TOWER - RELATIVE HUMIDITY AND TEMPERATURE
+```{r, warning=FALSE}
+
+#Importing the other towers relative humidity and temperature for south, northwest and the mountain tower.
+  
+s_humid <- read.csv('data/S_Tower_Relative humidity.csv', skip = 4, header = FALSE)
+
+# Taking off the null column the V7 by selecting 6 columns only
+s_humid <- s_humid[, 1:6]
+
+
+# Reassigning the column names as needed
+colnames(s_humid) <- c("DateTime", "TRF_STower_100_HMP45", "TRF_STower_300_HMP45","TRF_STower_700_HMP45","TRF_STower_1300_HMP45","TRF_SETower_2000_HMP45")
+
+s_temp <- read.csv('C:/Users/ual-laptop/Desktop/NE/S_Tower_Temperature.csv', skip = 4, header = FALSE)
+
+# Taking off the null column the V7 by selecting 6 columns only
+s_temp <- s_temp[, 1:6]
+
+# Reassigning the column names as needed
+colnames(s_temp) <- c("DateTime", "TRF_STower_100_HMP45", "TRF_STower_300_HMP45","TRF_STower_700_HMP45","TRF_STower_1300_HMP45","TRF_SETower_2000_HMP45")
+
+```
+
+
+#NORTH WEST - RELATIVE HUMIDITY AND TEMPERATURE
+```{r}
+
+nw_temp <- read.csv('data/NW_Tower_Temperature.csv', skip = 4, header = FALSE)
+
+# Taking off the null column the V6 by selecting 6 columns only
+nw_temp <- nw_temp[, 1:5]
+
+# Reassigning the column names as needed
+colnames(nw_temp) <- c("DateTime", "TRF_NWTower_100_HMP45", "TRF_NWTower_300_HMP45","TRF_NWTower_700_HMP45","TRF_NWTower_1300_HMP45")
+
+
+nw_humid <- read.csv('data/NW_Tower_Relative humidity.csv', skip = 4, header = FALSE )
+
+# Taking off the null column the V6 by selecting 6 columns only
+nw_humid <- nw_humid[, 1:5]
+
+# Reassigning the column names as needed
+colnames(nw_humid) <- c("DateTime", "TRF_NWTower_100_HMP45", "TRF_NWTower_300_HMP45","TRF_NWTower_700_HMP45","TRF_NWTower_1300_HMP45")
+
+```
+
+
+#MOUNTAIN TOWER - TEMPERATURE AND RELATIVE HUMIDITY
+```{r}
+
+mtn_temp <- read.csv('C:/Users/ual-laptop/Desktop/NE/Mtn_Tower_Temperature.csv', skip = 4, header = FALSE)
+
+# Taking off the null column the V6 by selecting 6 columns only
+mtn_temp <- mtn_temp[, 1:5]
+
+# Reassigning the column names as needed
+colnames(mtn_temp) <- c("DateTime", "TRF_MTNTower_100_HMP45", "TRF_MTNTower_300_HMP45","TRF_MTNTower_700_HMP45","TRF_MTNTower_1300_HMP45")
+
+
+mtn_humid <- read.csv('C:/Users/ual-laptop/Desktop/NE/Mtn_Tower_Relative humidity.csv', skip = 4, header = FALSE )
+
+# Taking off the null column the V6 by selecting 6 columns only
+mtn_humid <- mtn_humid[, 1:5]
+
+# Reassigning the column names as needed
+colnames(mtn_humid) <- c("DateTime", "TRF_MTNTower_100_HMP45", "TRF_MTNTower_300_HMP45","TRF_MTNTower_700_HMP45","TRF_MTNTower_1300_HMP45")
+
+```
+
+
+#Now filtering out and looking for null values in each tower file for the relative humidity and the temperature
+
+
+#Null values for all towers relative humidity and humidity except NE
+```{r}
+
+
+# Function to check for NA values in each column
+check_na_counts <- function(df, name) {
+  na_counts <- colSums(is.na(df))
+  cat(paste("NA counts for", name, "\n"))
+  print(na_counts)
+  
+  return(na_counts)
+}
+
+# Applying functions to all datasets
+na_nw_humid <- check_na_counts(nw_humid, "NW Humidity")
+na_nw_temp <- check_na_counts(nw_temp, "NW Temperature")
+na_mtn_humid <- check_na_counts(mtn_humid, "Mountain Humidity")
+na_mtn_temp <- check_na_counts(mtn_temp, "Mountain Temperature")
+na_s_humid <- check_na_counts(s_humid, "Southern Humidity")
+na_s_temp <- check_na_counts(s_temp, "Southern Temperature")
+
+
+```
+
+#Filtering out 2020 and checking out for 96 readings
+```{r}
+
+# Function to filter and find missing readings
+
+process_data <- function(tower, name) {
+  tower_2020 <- tower |> filter(year(DateTime) == 2020)
+  readings_per_day <- tower_2020 |> group_by(Date = date(DateTime)) |> summarize(Readings = n())
+  missing_days <- readings_per_day |> filter(Readings != 96)
+  
+  cat(paste("Missing dates on", name, "\n"))
+  print(missing_days)
+  
+  return(tower_2020)
+}
+
+# Applying the function to all datasets
+nw_humid_2020 <- process_data(nw_humid, "NW Humidity")
+nw_temp_2020 <- process_data(nw_temp, "NW Temperature")
+mtn_humid_2020 <- process_data(mtn_humid, "Mountain Humidity")
+mtn_temp_2020 <- process_data(mtn_temp, "Mountain Temperature")
+s_humid_2020 <- process_data(s_humid, "Southern Humidity")
+s_temp_2020 <- process_data(s_temp, "Southern Temperature")
+
+```
+#Calibration
+
+
+###Performing calibrations for Mountain Tower with the sensor to each temperature and relative humidity.
+```{r}
+
+mtn_temp_2020 <- mtn_temp_2020 %>%
+  mutate(
+    T_MTN_100_Corr  = TRF_MTNTower_100_HMP45,
+    T_MTN_300_Corr  = TRF_MTNTower_300_HMP45 * 0.9383 + 1.67,
+    T_MTN_700_Corr  = TRF_MTNTower_700_HMP45 * 1.129 - 2.4,
+    T_MTN_1300_Corr = TRF_MTNTower_1300_HMP45 * 1.004 - 0.02
+  )
+
+mtn_humid_2020 <- mtn_humid_2020 %>%
+  mutate(
+    RH_MTN_100_Corr  = TRF_MTNTower_100_HMP45,
+    RH_MTN_300_Corr  = TRF_MTNTower_300_HMP45 * 0.8975 + 12.2,
+    RH_MTN_700_Corr  = TRF_MTNTower_700_HMP45 * 0.863 + 16.2,
+    RH_MTN_1300_Corr = TRF_MTNTower_1300_HMP45 * 1.008 + 1.1
+  )
+
+```
+
+
+
+### #Performing calibrations for North West Tower with the sensor to each temperature and relative humidity.
+```{r}
+
+nw_temp_2020 <- nw_temp_2020 %>%
+  mutate(
+    T_NW_100_Corr  = TRF_NWTower_100_HMP45 * 0.9922 + 0.6,
+    T_NW_300_Corr  = TRF_NWTower_300_HMP45 * 1.005 - 0.17,
+    T_NW_700_Corr  = TRF_NWTower_700_HMP45 * 1.007 - 0.14,
+    T_NW_1300_Corr = TRF_NWTower_1300_HMP45 * 0.9801 + 0.54
+  )
+
+nw_humid_2020 <- nw_humid_2020 %>%
+  mutate(
+    RH_NW_100_Corr  = TRF_NWTower_100_HMP45 * 0.9756 - 1.2,
+    RH_NW_300_Corr  = TRF_NWTower_300_HMP45 * 0.9882 - 1.6,
+    RH_NW_700_Corr  = TRF_NWTower_700_HMP45 * 0.9895 + 1.1,
+    RH_NW_1300_Corr = TRF_NWTower_1300_HMP45 * 1.012 + 1.334
+  )
+
+```
+
+
+
+### #Performing calibrations for South Tower with the sensor to each temperature and relative humidity.
+```{r}
+s_temp_2020 <- s_temp_2020 %>%
+  mutate(
+    T_S_100_Corr  = TRF_STower_100_HMP45 * 1.041 + 0.08,
+    T_S_300_Corr  = TRF_STower_300_HMP45 * 1.026 - 0.04,
+    T_S_700_Corr  = TRF_STower_700_HMP45 * 1.037 - 0.15,
+    T_S_1300_Corr = TRF_STower_1300_HMP45 * 1.059 - 0.31,
+    T_S_2000_Corr = TRF_SETower_2000_HMP45  # No calibration needed
+  )
+
+
+s_humid_2020 <- s_humid_2020 %>%
+  mutate(
+    RH_S_100_Corr  = TRF_STower_100_HMP45 * 0.996 + 0.1,
+    RH_S_300_Corr  = TRF_STower_300_HMP45 * 1.04 - 2.4,
+    RH_S_700_Corr  = TRF_STower_700_HMP45 * 1.053 + 1.1,
+    RH_S_1300_Corr = TRF_STower_1300_HMP45 * 0.9499 + 7.4,
+    RH_S_2000_Corr = TRF_SETower_2000_HMP45  # No calibration needed
+  )
+
+```
+
+
+#Zone wise calibrations
+```{r}
+
+zone1_data <- s_temp_2020 %>%
+  mutate(Date = as.Date(DateTime)) %>%
+  group_by(Date) %>%
+  summarize(
+    Zone_1_Temp_Avg = mean(c(s_temp_2020$T_S_100_Corr, s_temp_2020$T_S_300_Corr, temperature1$T_NE_100_Corr, temperature1$T_NE_300_Corr), na.rm = TRUE),
+    Zone_1_RH_Avg = mean(c(s_humid_2020$RH_S_100_Corr, s_humid_2020$RH_S_300_Corr, humidity1$RH_NE_100_Corr, humidity1$RH_NE_300_Corr), na.rm = TRUE)
+  )
+
+# View first few rows of Zone 1 data
+print("Zone 1 Data:")
+print(head(zone1_data))
+
+
+
+```
+
+```{r}
+
+# Zone 2 calculation (Temperature and Humidity from NW (100-300), South (700-1300), Northeast (700-1300))
+
+zone2_data <- nw_temp_2020 %>%
+  mutate(Date = as.Date(DateTime)) %>%
+  group_by(Date) %>%
+  summarize(
+    Zone_2_Temp_Avg = mean(c(
+      nw_temp_2020$T_NW_100_Corr, 
+      nw_temp_2020$T_NW_300_Corr, 
+      s_temp_2020$T_S_700_Corr, 
+      s_temp_2020$T_S_1300_Corr, 
+      temperature1$T_NE_700_Corr, 
+      temperature1$T_NE_1300_Corr), na.rm = TRUE),
+      
+    Zone_2_RH_Avg = mean(c(
+      nw_humid$RH_NW_100_Corr, 
+      nw_humid$RH_NW_300_Corr, 
+      s_humid_2020$RH_S_700_Corr, 
+      s_humid_2020$RH_S_1300_Corr, 
+      humidity1$RH_NE_700_Corr, 
+      humidity1$RH_NE_1300_Corr), na.rm = TRUE)
+  )
+
+# View first few rows of Zone 2 data
+print("Zone 2 Data:")
+print(head(zone2_data))
+
+```
+
+
+```{r}
+
+# Zone 3 calculation (Temperature and Humidity from South (2000), NW (1300), Mtn (1300-2000), Northeast (2000))
+
+zone3_data <- nw_temp_2020 %>%
+  mutate(Date = as.Date(DateTime)) %>%
+  group_by(Date) %>%
+  summarize(
+    Zone_3_Temp_Avg = mean(c(
+      s_temp_2020$T_S_2000_Corr, 
+      nw_temp_2020$T_NW_1300_Corr, 
+      mtn_temp_2020$T_Mtn_1300_Corr, 
+      mtn_temp_2020$T_Mtn_2000_Corr, 
+      temperature1$T_NE_2000_Corr), na.rm = TRUE),
+      
+    Zone_3_RH_Avg = mean(c(
+      s_humid_2020$RH_S_2000_Corr, 
+      nw_humid_2020$RH_NW_1300_Corr, 
+      mtn_humid_2020$RH_Mtn_1300_Corr, 
+      mtn_humid_2020$RH_Mtn_2000_Corr, 
+      humidity1$RH_NE_2000_Corr), na.rm = TRUE)
+  )
+
+# View first few rows of Zone 3 data
+print("Zone 3 Data:")
+print(head(zone3_data))
+
+```
+
+

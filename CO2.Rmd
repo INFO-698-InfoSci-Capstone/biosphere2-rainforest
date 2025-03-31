@@ -1,0 +1,73 @@
+---
+title: "carbondioxide"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r, libraries}
+
+##Installing libraries
+if(!require('pacman'))
+  install.packages('pacman')
+
+## Loading libraries
+pacman :: p_load(
+  RColorBrewer,
+  plotly,
+  janitor,
+  tidytext,
+  patchwork,
+  colorspace,
+  dplyr,
+  dbscan,
+  lubridate,
+  readr,
+  GGally,
+  reshape2,
+  tidyr,
+  FNN,
+  zoo)
+```
+
+```{r}
+##Using the carbondioxide data file 
+
+#Loading the file
+carbondioxide <- read.csv('data/Outside_Air_inject_CO2.txt')
+co2 <- carbondioxide
+
+#Taking the first 5 rows
+head(co2)
+
+# Check for missing values in each column 
+colSums(is.na(co2))
+
+##Missing values
+sum(is.na(co2))
+
+```
+```{r}
+
+# Perform interpolation with rule=2 to fill leading/trailing NAs
+co2$Out_CO2_Avg <- na.approx(co2$Out_CO2_Avg, na.rm = FALSE, rule = 2)
+
+# For any remaining NAs (consecutive missing), use LOCF/NOCB
+#co2$Out_CO2_Avg <- na.locf(co2$Out_CO2_Avg, na.rm = FALSE)
+#co2$Out_CO2_Avg <- na.locf(co2$Out_CO2_Avg, na.rm = FALSE, fromLast = TRUE)
+
+# Verify results
+sum(is.na(co2$Out_CO2_Avg)) 
+head(co2)
+
+```
+
+```{r}
+
+
+```
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

@@ -46,17 +46,17 @@ Using the scada data from the scada mountain tower.
 
 ```{r carbondioxide}
 
-scada <- read.csv('data/SCADA__MTNTWRCO2.csv', skip = 2)
+co2_zone3 <- read.csv('data/SCADA__MTNTWRCO2.csv', skip = 2)
 
 
 ## Reading the first 5 rows
-head(scada)
+head(co2_zone3)
 
 # Check for missing values in each column
-colSums(is.na(scada))
+colSums(is.na(co2_zone3))
 
 ##Missing values
-sum(is.na(scada))
+sum(is.na(co2_zone3))
 ```
 
 The carbondioxide that the sensors detect, shows that all the columns doesn't have any missing values in it. So, it is not necessary to handle missing values. 
@@ -68,15 +68,15 @@ Counting the number as the readings takes place for every 15 min by sensor which
 ```{r}
 
 # Convert TIMESTAMP to a datetime format
-scada <- scada %>% mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S"))
+co2_zone3 <- co2_zone3 %>% mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S"))
 
 # Filter for the year 2020
-scada1 <- scada %>% filter(year(TIMESTAMP) == 2020)
+co2_zone3_1 <- co2_zone3 %>% filter(year(TIMESTAMP) == 2020)
 
                            
 
 ##  Counting the number as the readings takes place for every 15 min
-readings_per_day <- scada1 |> group_by(Date = date(TIMESTAMP)) %>% summarize(Readings = n())
+readings_per_day <- co2_zone3_1 |> group_by(Date = date(TIMESTAMP)) %>% summarize(Readings = n())
 
 ##Missing date readings
 missing_day <- readings_per_day |> filter(Readings != 96)
@@ -98,10 +98,10 @@ If I have to fill the missing row, I am taking the mean of value from scada1 whi
 ```{r}
 
 # Check the data type of the column
-class(scada1$VALUE)
+class(co2_zone3_1$VALUE)
 
 # Calculate the mean value for the year 2020
-mean_value <- mean(scada1$VALUE)
+mean_value <- mean(co2_zone3_1$VALUE)
 print(mean_value)
 ```
 The mean value for the VALUE column is 428.1858.
@@ -109,7 +109,7 @@ The mean value for the VALUE column is 428.1858.
 ```{r}
 
 # Group by day and calculate the mean value per day
-mean_value_per_day <- scada1 |>
+mean_value_per_day <- co2_zone3_1 |>
   group_by(Date = date(TIMESTAMP)) |> 
   summarize(Mean = mean(VALUE))
 
@@ -137,7 +137,7 @@ readings_per_day <- readings_per_day |>
 ```{r}
 
 # Extract the VALUE column for outlier detection
-data_knn <- as.matrix(scada1$VALUE)
+data_knn <- as.matrix(co2_zone3_1$VALUE)
 
 # Detecting outliers using KNN (k = 6)
 knn_distances <- kNNdist(data_knn, k = 6)
@@ -147,10 +147,10 @@ outlier_threshold <- quantile(knn_distances, 0.95)
 outliers <- knn_distances > outlier_threshold
 
 # outlier information to the original data
-scada1$Is_Outlier <- outliers
+co2_zone3_1$Is_Outlier <- outliers
 
 # Visualize the outliers
-ggplot(scada1, aes(x = TIMESTAMP, y = VALUE, color = Is_Outlier)) +
+ggplot(co2_zone3_1, aes(x = TIMESTAMP, y = VALUE, color = Is_Outlier)) +
   geom_point() +
   labs(title = "Outliers Detected Using KNN",
        x = "Timestamp",
@@ -738,6 +738,97 @@ zone3_data <- nw_temp_2020 %>%
 print("Zone 3 Data:")
 print(head(zone3_data))
 
+```
+#Zone wise calculation of no of moles
+
+```{r, mole calculation}
+
+#Loading the files for the zone1,zone2,zone3 of the carbondioxide files
+co2_zone1 <- read.csv('data/SCADA_LOLNDCO2_1M.csv', skip = 2)
+co2_zone2 <- read.csv('data/SCADA_LOLNDCO2_13M.csv', skip = 2)
+
+#Already loaded the zone 3 for the carbondioxide
+#co2_zone3 
+
+```
+
+
+```{r}
+#Checking on the missing the value and fetching the mean of the carbondioxide for the year 2020  not considering the null values.
+
+# Check for missing values in each column
+colSums(is.na(co2_zone1))
+
+# Check for missing values in each column
+colSums(is.na(co2_zone2))
+
+# Check for missing values in each column
+colSums(is.na(co2_zone3))
+
+
+
+# Calculate mean CO2 for each zone
+avg_co2_zone1 <- co2_zone1 |>
+  mutate(Date = as.Date(TIMESTAMP),
+         Year = year(Date)) |>
+  filter(Year == 2020) |>                                           
+  summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|>              
+  pull(mean_co2) 
+
+avg_co2_zone2 <- co2_zone2 |>
+  mutate(Date = as.Date(TIMESTAMP),
+         Year = year(Date)) |>
+  filter(Year == 2020) |>                                           
+  summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|>              
+  pull(mean_co2)
+
+avg_co2_zone3 <- co2_zone3 |>
+  mutate(Date = as.Date(TIMESTAMP),
+         Year = year(Date)) |>
+  filter(Year == 2020) |>                                           
+  summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|>              
+  pull(mean_co2)
+
+
+```
+```{r, temperature average zonewise}
+
+
+#Averaging the temperature zonewise -2020
+
+temp_zone1 <- mean(zone1_data$Zone_1_Temp_Avg) + 273.15
+temp_zone2 <- mean(zone2_data$Zone_2_Temp_Avg) + 273.15
+temp_zone3 <- mean(zone3_data$Zone_3_Temp_Avg) + 273.15
+
+
+```
+
+
+#Calculating Daily carbondioxide moles per zone
+
+###### P - Pressure (Pa) from 884 mbar, V - Rainforest volume (m³) ,R- Gas constant (m³·Pa·K⁻¹·mol⁻¹) and Zone 1/2/3 volume fraction.
+```{r}
+
+# Constants
+P <- 88400  
+V <- 26700    
+R <- 8.31446   
+vol_fracs <- c(0.304, 0.588, 0.108)  
+
+# Function to compute Co2 moles for a zone
+co2_moles <- function(avg_co2_ppm, temp_k, vol_frac) {
+  n_air <- (P * V) / (R * temp_k)         
+  n_co2 <- n_air * (avg_co2_ppm / 1e6) * vol_frac
+  return(n_co2)
+}
+
+
+# Add daily CO2 moles to each zone's data
+zone1_moles <- co2_moles(avg_co2_zone1,temp_zone1, vol_fracs[1])
+zone2_moles <- co2_moles(avg_co2_zone2,temp_zone2, vol_fracs[2])
+zone3_moles <- co2_moles(avg_co2_zone3,temp_zone3, vol_fracs[3])
+  
+print(paste("zone1 moles of co2:", zone1_moles, "zone-2 moles of co2:", zone2_moles, "zone-3 moles of co2:", zone3_moles))
 ```
 
 

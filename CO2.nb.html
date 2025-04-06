@@ -1788,13 +1788,18 @@ pacman :: p_load(
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG4jI0luc3RhbGxpbmcgbGlicmFyaWVzXG5pZighcmVxdWlyZSgncGFjbWFuJykpXG4gIGluc3RhbGwucGFja2FnZXMoJ3BhY21hbicpXG5cbiMjIExvYWRpbmcgbGlicmFyaWVzXG5wYWNtYW4gOjogcF9sb2FkKFxuICBSQ29sb3JCcmV3ZXIsXG4gIHBsb3RseSxcbiAgamFuaXRvcixcbiAgdGlkeXRleHQsXG4gIHBhdGNod29yayxcbiAgY29sb3JzcGFjZSxcbiAgZHBseXIsXG4gIGRic2NhbixcbiAgbHVicmlkYXRlLFxuICByZWFkcixcbiAgR0dhbGx5LFxuICByZXNoYXBlMixcbiAgdGlkeXIsXG4gIEZOTixcbiAgem9vKVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG4jI0luc3RhbGxpbmcgbGlicmFyaWVzXG5pZighcmVxdWlyZSgncGFjbWFuJykpXG4gIGluc3RhbGwucGFja2FnZXMoJ3BhY21hbicpXG5gYGAifQ== -->
 <pre class="r"><code>
 ##Installing libraries
 if(!require(&#39;pacman&#39;))
-  install.packages(&#39;pacman&#39;)
-
-## Loading libraries
+  install.packages(&#39;pacman&#39;)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiTG9hZGluZyByZXF1aXJlZCBwYWNrYWdlOiBwYWNtYW5cbldhcm5pbmc6IHBhY2thZ2Ug4oCYcGFjbWFu4oCZIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4zLjNcbiJ9 -->
+<pre><code>Loading required package: pacman
+Warning: package ‘pacman’ was built under R version 4.3.3</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyMgTG9hZGluZyBsaWJyYXJpZXNcbnBhY21hbiA6OiBwX2xvYWQoXG4gIFJDb2xvckJyZXdlcixcbiAgcGxvdGx5LFxuICBqYW5pdG9yLFxuICB0aWR5dGV4dCxcbiAgcGF0Y2h3b3JrLFxuICBjb2xvcnNwYWNlLFxuICBkcGx5cixcbiAgZGJzY2FuLFxuICBsdWJyaWRhdGUsXG4gIHJlYWRyLFxuICBHR2FsbHksXG4gIHJlc2hhcGUyLFxuICB0aWR5cixcbiAgRk5OLFxuICB6b28pXG5gYGAifQ== -->
+<pre class="r"><code>## Loading libraries
 pacman :: p_load(
   RColorBrewer,
   plotly,

@@ -391,11 +391,11 @@ pacman :: p_load(
 <div id="carbondioxide-calibarations" class="section level1">
 <h1>Carbondioxide Calibarations</h1>
 <p>Using the scada data from the scada mountain tower.</p>
-<pre class="r"><code>scada &lt;- read.csv(&#39;data/SCADA__MTNTWRCO2.csv&#39;, skip = 2)
+<pre class="r"><code>co2_zone3 &lt;- read.csv(&#39;data/SCADA__MTNTWRCO2.csv&#39;, skip = 2)
 
 
 ## Reading the first 5 rows
-head(scada)</code></pre>
+head(co2_zone3)</code></pre>
 <pre><code>##      ID            TIMESTAMP TRENDFLAGS STATUS    VALUE TRENDFLAGS_TAG
 ## 1 63893  2019/08/25 00:00:00          0      0 514.7742            { }
 ## 2 63894  2019/08/25 00:15:00          0      0 515.1938            { }
@@ -411,13 +411,13 @@ head(scada)</code></pre>
 ## 5       {ok}
 ## 6       {ok}</code></pre>
 <pre class="r"><code># Check for missing values in each column
-colSums(is.na(scada))</code></pre>
+colSums(is.na(co2_zone3))</code></pre>
 <pre><code>##             ID      TIMESTAMP     TRENDFLAGS         STATUS          VALUE 
 ##              0              0             14             14             14 
 ## TRENDFLAGS_TAG     STATUS_TAG 
 ##              0              0</code></pre>
 <pre class="r"><code>##Missing values
-sum(is.na(scada))</code></pre>
+sum(is.na(co2_zone3))</code></pre>
 <pre><code>## [1] 42</code></pre>
 <p>The carbondioxide that the sensors detect, shows that all the columns
 doesn’t have any missing values in it. So, it is not necessary to handle
@@ -425,15 +425,15 @@ missing values.</p>
 <p>Counting the number as the readings takes place for every 15 min by
 sensor which means 96 per day.</p>
 <pre class="r"><code># Convert TIMESTAMP to a datetime format
-scada &lt;- scada %&gt;% mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = &quot;%Y/%m/%d %H:%M:%S&quot;))
+co2_zone3 &lt;- co2_zone3 %&gt;% mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = &quot;%Y/%m/%d %H:%M:%S&quot;))
 
 # Filter for the year 2020
-scada1 &lt;- scada %&gt;% filter(year(TIMESTAMP) == 2020)
+co2_zone3_1 &lt;- co2_zone3 %&gt;% filter(year(TIMESTAMP) == 2020)
 
                            
 
 ##  Counting the number as the readings takes place for every 15 min
-readings_per_day &lt;- scada1 |&gt; group_by(Date = date(TIMESTAMP)) %&gt;% summarize(Readings = n())
+readings_per_day &lt;- co2_zone3_1 |&gt; group_by(Date = date(TIMESTAMP)) %&gt;% summarize(Readings = n())
 
 ##Missing date readings
 missing_day &lt;- readings_per_day |&gt; filter(Readings != 96)
@@ -456,15 +456,15 @@ dont what was starting at that moment.</p>
 <p>If I have to fill the missing row, I am taking the mean of value from
 scada1 which considers the data for the year 2020 year only.</p>
 <pre class="r"><code># Check the data type of the column
-class(scada1$VALUE)</code></pre>
+class(co2_zone3_1$VALUE)</code></pre>
 <pre><code>## [1] &quot;numeric&quot;</code></pre>
 <pre class="r"><code># Calculate the mean value for the year 2020
-mean_value &lt;- mean(scada1$VALUE)
+mean_value &lt;- mean(co2_zone3_1$VALUE)
 print(mean_value)</code></pre>
 <pre><code>## [1] 428.1858</code></pre>
 <p>The mean value for the VALUE column is 428.1858.</p>
 <pre class="r"><code># Group by day and calculate the mean value per day
-mean_value_per_day &lt;- scada1 |&gt;
+mean_value_per_day &lt;- co2_zone3_1 |&gt;
   group_by(Date = date(TIMESTAMP)) |&gt; 
   summarize(Mean = mean(VALUE))
 
@@ -498,7 +498,7 @@ ggplot(mean_value_per_day, aes(x = Date, y = Mean)) +
 readings_per_day &lt;- readings_per_day |&gt; 
   left_join(mean_value_per_day, by = &quot;Date&quot;)</code></pre>
 <pre class="r"><code># Extract the VALUE column for outlier detection
-data_knn &lt;- as.matrix(scada1$VALUE)
+data_knn &lt;- as.matrix(co2_zone3_1$VALUE)
 
 # Detecting outliers using KNN (k = 6)
 knn_distances &lt;- kNNdist(data_knn, k = 6)
@@ -508,10 +508,10 @@ outlier_threshold &lt;- quantile(knn_distances, 0.95)
 outliers &lt;- knn_distances &gt; outlier_threshold
 
 # outlier information to the original data
-scada1$Is_Outlier &lt;- outliers
+co2_zone3_1$Is_Outlier &lt;- outliers
 
 # Visualize the outliers
-ggplot(scada1, aes(x = TIMESTAMP, y = VALUE, color = Is_Outlier)) +
+ggplot(co2_zone3_1, aes(x = TIMESTAMP, y = VALUE, color = Is_Outlier)) +
   geom_point() +
   labs(title = &quot;Outliers Detected Using KNN&quot;,
        x = &quot;Timestamp&quot;,
@@ -1158,6 +1158,81 @@ print(&quot;Zone 3 Data:&quot;)</code></pre>
 ## 4 2020-01-04            26.3          70.3
 ## 5 2020-01-05            26.3          70.3
 ## 6 2020-01-06            26.3          70.3</code></pre>
+<p>#Zone wise calculation of no of moles</p>
+<pre class="r"><code>#Loading the files for the zone1,zone2,zone3 of the carbondioxide files
+co2_zone1 &lt;- read.csv(&#39;data/SCADA_LOLNDCO2_1M.csv&#39;, skip = 2)
+co2_zone2 &lt;- read.csv(&#39;data/SCADA_LOLNDCO2_13M.csv&#39;, skip = 2)
+
+#Already loaded the zone 3 for the carbondioxide
+#co2_zone3 </code></pre>
+<pre class="r"><code>#Checking on the missing the value and fetching the mean of the carbondioxide for the year 2020  not considering the null values.
+
+# Check for missing values in each column
+colSums(is.na(co2_zone1))</code></pre>
+<pre><code>##             ID      TIMESTAMP     TRENDFLAGS         STATUS          VALUE 
+##              0              0             14             14             14 
+## TRENDFLAGS_TAG     STATUS_TAG 
+##              0              0</code></pre>
+<pre class="r"><code># Check for missing values in each column
+colSums(is.na(co2_zone2))</code></pre>
+<pre><code>##             ID      TIMESTAMP     TRENDFLAGS         STATUS          VALUE 
+##              0              0             14             14             14 
+## TRENDFLAGS_TAG     STATUS_TAG 
+##              0              0</code></pre>
+<pre class="r"><code># Check for missing values in each column
+colSums(is.na(co2_zone3))</code></pre>
+<pre><code>##             ID      TIMESTAMP     TRENDFLAGS         STATUS          VALUE 
+##              0             14             14             14             14 
+## TRENDFLAGS_TAG     STATUS_TAG 
+##              0              0</code></pre>
+<pre class="r"><code># Calculate mean CO2 for each zone
+avg_co2_zone1 &lt;- co2_zone1 |&gt;
+  mutate(Date = as.Date(TIMESTAMP),
+         Year = year(Date)) |&gt;
+  filter(Year == 2020) |&gt;                                           
+  summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|&gt;              
+  pull(mean_co2) 
+
+avg_co2_zone2 &lt;- co2_zone2 |&gt;
+  mutate(Date = as.Date(TIMESTAMP),
+         Year = year(Date)) |&gt;
+  filter(Year == 2020) |&gt;                                           
+  summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|&gt;              
+  pull(mean_co2)
+
+avg_co2_zone3 &lt;- co2_zone3 |&gt;
+  mutate(Date = as.Date(TIMESTAMP),
+         Year = year(Date)) |&gt;
+  filter(Year == 2020) |&gt;                                           
+  summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|&gt;              
+  pull(mean_co2)</code></pre>
+<pre class="r"><code>#Averaging the temperature zonewise -2020
+
+temp_zone1 &lt;- mean(zone1_data$Zone_1_Temp_Avg)
+temp_zone2 &lt;- mean(zone2_data$Zone_2_Temp_Avg)
+temp_zone3 &lt;- mean(zone3_data$Zone_3_Temp_Avg)</code></pre>
+<p>#Calculating Daily carbondioxide moles per zone</p>
+<div id="p---pressure-pa-from-884-mbar-v---rainforest-volume-m³-r--gas-constant-m³pak¹mol¹-and-zone-123-volume-fraction." class="section level6">
+<h6>P - Pressure (Pa) from 884 mbar, V - Rainforest volume (m³) ,R- Gas
+constant (m³·Pa·K⁻¹·mol⁻¹) and Zone 1/2/3 volume fraction.</h6>
+<pre class="r"><code># Constants
+P &lt;- 88400  
+V &lt;- 26700    
+R &lt;- 8.31446   
+vol_fracs &lt;- c(0.304, 0.588, 0.108)  
+
+# Function to compute Co2 moles for a zone
+co2_moles &lt;- function(avg_co2_ppm, temp_k, vol_frac) {
+  n_air &lt;- (P * V) / (R * temp_k)         
+  n_co2 &lt;- n_air * (avg_co2_ppm / 1e6) * vol_frac
+  return(n_co2)
+}
+
+# Add daily CO2 moles to each zone&#39;s data
+zone1_moles &lt;- co2_moles(avg_co2_zone1,temp_zone1, vol_fracs[1])
+zone2_moles &lt;- co2_moles(avg_co2_zone2,temp_zone2, vol_fracs[2])
+zone3_moles &lt;- co2_moles(avg_co2_zone3,temp_zone3, vol_fracs[3])</code></pre>
+</div>
 </div>
 </div>
 </div>

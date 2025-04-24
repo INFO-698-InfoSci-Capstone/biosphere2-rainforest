@@ -261,7 +261,10 @@ ggplot(co2_zone3,
     plot.background = element_rect(color = "#CA3D51"),
     axis.title = element_text(size = 10),
     panel.grid.major = element_line(color = "black", linewidth = 1.1),
-    panel.background = element_rect(colour = "#CA3D51")
+    panel.background = element_rect(colour = "#CA3D51"),
+    legend.background = element_rect(color = "#CA3D51", fill ="white", linewidth = 0.5),
+    legend.title = element_text(face = "bold"),
+    legend.text = element_text(size = 10)
     )
 
 ``` 
@@ -415,7 +418,7 @@ for (col in rh_columns) {
 }
 
 # Visualize outliers for each column
-for (col in rh_columns) {
+for (col in rh_columns){
   # Create a data frame for plotting
   plot_data <- data.frame(
     Index = 1:nrow(humidity_rh),
@@ -424,18 +427,32 @@ for (col in rh_columns) {
   )
   
   # Plot the data with outliers highlighted
-  p <- ggplot(plot_data, aes(x = Index, y = Value, color = Outlier)) +
-    geom_point() +
-    scale_color_manual(values = c("black", "red")) +
+  p<- ggplot(plot_data, aes(x = Index, y = Value, color = Outlier)) +
+    geom_point(size = 2, alpha = 0.6) +
+    scale_color_manual(values = c("TRUE"= "#5e66ad","FALSE" = "#42bd35" ),
+                       labels = c("Outlier", "Normal"),
+                       guide = guide_legend(shape = 16)) +
     labs(title = paste("Outliers in", col),
-         x = "Index",
-         y = "Value") +
-    theme_minimal()
+         x = "ObservationIndex",
+         y = "Humidity Value") +
+    theme_linedraw()+
+    theme(
+      plot.background = element_rect(colour = "blue", linewidth = 1),
+      panel.background = element_rect(colour = "blue", linewidth = 1),
+      plot.title = element_text(hjust = 0.6, face = "bold"),
+      axis.title = element_text(size = 12),
+      legend.background = element_rect(colour = "blue"),
+      legend.title = element_text(hjust = 0.5, color = "black", face = "bold")
+      )
   
   print(p)
 }
-
+  
 ```
+  
+  
+
+
 
 
 ### Data Quality Summary: North East Tower Temperature data
@@ -554,10 +571,10 @@ print(ne_temp_mean)
 ```{r}
 
 # Select the corrected columns starting with "T_NE"
-temp_columns <- grep("^T_NE", names(temperature1), value = TRUE)
+temp_columns <- grep("^T_NE", names(ne_temperature_2020), value = TRUE)
 
 # Considering values of those columns
-temp_df <- temperature1[, temp_columns]
+temp_df <- ne_temperature_2020[, temp_columns]
 
 # Function to detect outliers using KNN
 detect_outlier_temp <- function(data) {
@@ -594,17 +611,30 @@ for (col in temp_columns) {
   )
   
   # Plot the data with outliers highlighted
-  p <- ggplot(plot_data, aes(x = Index, y = Value, color = Outlier)) +
-    geom_point() +
-    scale_color_manual(values = c("black", "red")) +
+  p1 <- ggplot(plot_data, aes(x = Index, y = Value, fill = Outlier)) +
+    geom_point(size = 2, shape = 21, stroke = 0.5, color = "#e0e0c5") +
+    scale_fill_manual(values = c("#2e2b2c", "#d60f51"), labels = c("Normal", "Outlier")) +
     labs(title = paste("Outliers in", col),
-         x = "Index",
-         y = "Value") +
-    theme_minimal()
+         x = "Observation Index",
+         y = "Temperature") +
+    theme_gray()+
+    theme(
+      plot.background = element_rect(color = "black"),
+      panel.background = element_rect(color = "black"),
+      plot.title = element_text(face = "italic", hjust = 0.6),
+      axis.title = element_text(face = "italic"),
+      axis.text = element_text(face = 'italic'),
+      legend.background = element_rect(color = "black"),
+      legend.key = element_rect(color = 'black'),
+      legend.text = element_text(face = 'italic')
+      
+      
+    )
   
-  print(p)
+  print(p1)
 }
 ```
+
 
 #Each day value according to the zone wise
 
@@ -685,7 +715,7 @@ colnames(nw_humid) <- c("DateTime", "TRF_NWTower_100_HMP45", "TRF_NWTower_300_HM
 ```
 
 
-#MOUNTAIN TOWER - TEMPERATURE AND RELATIVE HUMIDITY
+### MOUNTAIN TOWER - TEMPERATURE AND RELATIVE HUMIDITY
 1. Imported 15-minute resolution humidity/temperature data from Mountain Tower sensors (100m–2000m elevations).  
 2. Preprocessed by removing null columns, standardizing headers, and preserving raw data copies.  
 3. Structured datasets with consistent columns: `DateTime` + 5 elevation-specific sensor readings.  

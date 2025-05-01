@@ -32,39 +32,90 @@ pacman :: p_load(
   zoo)
 ```
 
+
+
+
+
 ```{r}
+
 ##Using the carbondioxide data file 
 
 #Loading the file
-carbondioxide <- read.csv('data/Outside_Air_inject_CO2.txt')
-co2 <- carbondioxide
+co2 <- read.csv('data/Outside_Air_inject_CO2.txt')
+carbondioxide <- co2
 
 #Taking the first 5 rows
-head(co2)
+head(carbondioxide)
 
 # Check for missing values in each column 
-colSums(is.na(co2))
+colSums(is.na(carbondioxide))
 
 ##Missing values
-sum(is.na(co2))
+sum(is.na(carbondioxide))
 
 ```
+
 ```{r}
 
 # Perform interpolation with rule=2 to fill leading/trailing NAs
-co2$Out_CO2_Avg <- na.approx(co2$Out_CO2_Avg, na.rm = FALSE, rule = 2)
+carbondioxide$Out_CO2_Avg <- na.approx(carbondioxide$Out_CO2_Avg, na.rm = FALSE, rule = 2)
+#carbondioxide |> mutate(Out_CO2_Avg = na.approx(Out_CO2_Avg,na.rm = FALSE))
+
 
 # For any remaining NAs (consecutive missing), use LOCF/NOCB
 #co2$Out_CO2_Avg <- na.locf(co2$Out_CO2_Avg, na.rm = FALSE)
 #co2$Out_CO2_Avg <- na.locf(co2$Out_CO2_Avg, na.rm = FALSE, fromLast = TRUE)
 
-# Verify results
-sum(is.na(co2$Out_CO2_Avg)) 
-head(co2)
+#co2_zone3 <- co2_zone3 |> mutate(VALUE = na.approx(VALUE, na.rm = FALSE))
+
+
+# Check for missing values in each column 
+colSums(is.na(carbondioxide))
+
+##Missing values
+sum(is.na(carbondioxide))
+
+
+```
+```{r}
+#Converting the temperature from celsius to kelvin
+carbondioxide$Out_T <- carbondioxide$Out_T + 273.15
 
 ```
 
+
+
+
 ```{r}
+
+# Total rainforest volume in cubic meters
+V_rainforest <- 26700
+P <- 88400
+R <- 8.31446   
+
+#Calculating carbondioxide moles
+co2_moles <- function(volume, temp, co2){
+  n_air <- (P * volume) / (R * temp)
+  n_co2 <- n_air * (co2 / 1e6)
+  return(n_co2)
+  
+}
+
+#Calculating the co2 entering and exiting
+carbondioxide <- carbondioxide |> mutate(Moles_co2_in = co2_moles(Inject_V_m3, Out_T, Out_CO2_Avg))
+
+#understanding the moles of co2_out, taking the previous injection and the exchange fraction
+carbondioxide <- carbondioxide |> mutate(Moles_co2_out = lag(Moles_co2_in) * AirInj_LR_Louver_New)
+
+#Treating the first row correctly
+carbondioxide <- carbondioxide |> mutate(Moles_co2_out = ifelse(is.na(Moles_co2_out), 0, Moles_co2_out))
+
+#Calculating the net co2 
+carbondioxide<- carbondioxide |> mutate(Net_CO2 = Moles_co2_in - Moles_co2_out)
+
+
+
+
 
 
 ```

@@ -1788,18 +1788,13 @@ pacman :: p_load(
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG4jI0luc3RhbGxpbmcgbGlicmFyaWVzXG5pZighcmVxdWlyZSgncGFjbWFuJykpXG4gIGluc3RhbGwucGFja2FnZXMoJ3BhY21hbicpXG5gYGAifQ== -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG4jI0luc3RhbGxpbmcgbGlicmFyaWVzXG5pZighcmVxdWlyZSgncGFjbWFuJykpXG4gIGluc3RhbGwucGFja2FnZXMoJ3BhY21hbicpXG5cbiMjIExvYWRpbmcgbGlicmFyaWVzXG5wYWNtYW4gOjogcF9sb2FkKFxuICBSQ29sb3JCcmV3ZXIsXG4gIHBsb3RseSxcbiAgamFuaXRvcixcbiAgdGlkeXRleHQsXG4gIHBhdGNod29yayxcbiAgY29sb3JzcGFjZSxcbiAgZHBseXIsXG4gIGRic2NhbixcbiAgbHVicmlkYXRlLFxuICByZWFkcixcbiAgR0dhbGx5LFxuICByZXNoYXBlMixcbiAgdGlkeXIsXG4gIEZOTixcbiAgem9vKVxuYGBgIn0= -->
 <pre class="r"><code>
 ##Installing libraries
 if(!require(&#39;pacman&#39;))
-  install.packages(&#39;pacman&#39;)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiTG9hZGluZyByZXF1aXJlZCBwYWNrYWdlOiBwYWNtYW5cbldhcm5pbmc6IHBhY2thZ2Ug4oCYcGFjbWFu4oCZIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4zLjNcbiJ9 -->
-<pre><code>Loading required package: pacman
-Warning: package ‘pacman’ was built under R version 4.3.3</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyMgTG9hZGluZyBsaWJyYXJpZXNcbnBhY21hbiA6OiBwX2xvYWQoXG4gIFJDb2xvckJyZXdlcixcbiAgcGxvdGx5LFxuICBqYW5pdG9yLFxuICB0aWR5dGV4dCxcbiAgcGF0Y2h3b3JrLFxuICBjb2xvcnNwYWNlLFxuICBkcGx5cixcbiAgZGJzY2FuLFxuICBsdWJyaWRhdGUsXG4gIHJlYWRyLFxuICBHR2FsbHksXG4gIHJlc2hhcGUyLFxuICB0aWR5cixcbiAgRk5OLFxuICB6b28pXG5gYGAifQ== -->
-<pre class="r"><code>## Loading libraries
+  install.packages(&#39;pacman&#39;)
+
+## Loading libraries
 pacman :: p_load(
   RColorBrewer,
   plotly,
@@ -1818,46 +1813,86 @@ pacman :: p_load(
   zoo)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyNVc2luZyB0aGUgY2FyYm9uZGlveGlkZSBkYXRhIGZpbGUgXG5cbiNMb2FkaW5nIHRoZSBmaWxlXG5jYXJib25kaW94aWRlIDwtIHJlYWQuY3N2KCdkYXRhL091dHNpZGVfQWlyX2luamVjdF9DTzIudHh0JylcbmNvMiA8LSBjYXJib25kaW94aWRlXG5cbiNUYWtpbmcgdGhlIGZpcnN0IDUgcm93c1xuaGVhZChjbzIpXG5gYGAifQ== -->
-<pre class="r"><code>##Using the carbondioxide data file 
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG4jI1VzaW5nIHRoZSBjYXJib25kaW94aWRlIGRhdGEgZmlsZSBcblxuI0xvYWRpbmcgdGhlIGZpbGVcbmNvMiA8LSByZWFkLmNzdignZGF0YS9PdXRzaWRlX0Fpcl9pbmplY3RfQ08yLnR4dCcpXG5jYXJib25kaW94aWRlIDwtIGNvMlxuXG4jVGFraW5nIHRoZSBmaXJzdCA1IHJvd3NcbmhlYWQoY2FyYm9uZGlveGlkZSlcbmBgYCJ9 -->
+<pre class="r"><code>
+##Using the carbondioxide data file 
 
 #Loading the file
-carbondioxide &lt;- read.csv(&#39;data/Outside_Air_inject_CO2.txt&#39;)
-co2 &lt;- carbondioxide
+co2 &lt;- read.csv(&#39;data/Outside_Air_inject_CO2.txt&#39;)
+carbondioxide &lt;- co2
 
 #Taking the first 5 rows
-head(co2)</code></pre>
+head(carbondioxide)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbImRhdGEuZnJhbWUiXSwibnJvdyI6NiwibmNvbCI6Niwic3VtbWFyeSI6eyJEZXNjcmlwdGlvbiI6WyJkZiBbNiDDlyA2XSJdfX0sInJkZiI6Ikg0c0lBQUFBQUFBQUJndHlpVERtaXVCaVlHQmdabUJoWm1KZ1pnVXlHVmhEUTl4MExSZ1lXSmlBSEVZR0ZnWk9FRjBCVkNRTVpMQUJzUUNZaGtnSUcxam9HNW5xR3hrWVdpb1lHbGtaR0NnNCttS1hNalRGS1dXTVc1Y0praTRoWkNrVXExQmxJRFl4TVBDQjNHbC9jeVlJekNLV2h1bHpPSElIRkJvTXhOSndmWmFialoxL2FWMXhzRXdEQXdkTFNiQzVEaGJQSUh3THFMeEZBNHErK2c4Z0p2c2lZbW00ZmRMR1lPQWdDYVdsb1BaS25RR0JzM0ErVkIxYXhMTG1KZWFtRnFORkttZElKbEN3SkRHM0FDb2c0cGhaNUptWEZlOFRGTytUWDFxV1doVHZsMW9PbGVNR1NxUW1sOFNIeGVjYXd3ejFMeTJKRDRISmd6ak8va2J4am1YcFVDRjJrRkNBWXhDYVd6aUw4c3YxWU83aEJXSW1hQkN4b1RzNk9TZXhHT1pvbUNCWFNtSkpvbDVhRVZBL2tQY1BUUXQ3ZmtGSlpuNGVVQk1UY2pLR3ArOGlOQUgrMGp5UVMxSjBrek5LODdKMURkR2ttUXZ5MGtGMmdvVWdtQmRLczZHeVFhNWcrbzhXd0d5cGVlbVplYWt3NytRa0pxWG13RXhPU1MyRE12bUE0UUVPRHIyQ29zeThFcGcvZ2FMRmVpWDVKWWt3TFZ6SitUa3dFYkRQR2Y0QkFQRFQ1VlRiQXdBQSJ9 -->
+<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbImRhdGEuZnJhbWUiXSwibnJvdyI6NiwibmNvbCI6Niwic3VtbWFyeSI6eyJEZXNjcmlwdGlvbiI6WyJkZiBbNiDDlyA2XSJdfX0sInJkZiI6Ikg0c0lBQUFBQUFBQUJndHlpVERtaXVCaVlHQmdabUJoWm1KZ1pnVXlHVmhEUTl4MExSZ1lXSmlBSEVZR0ZnWk9FRjBCVkNRTVpMQUJzUUNZaGtnSUcxam9HNW5xR3hrWVdpb1lHbGtaR0NnNCttS1hNalRGS1dXTVc1Y0praTRoWkNrVXExQmxJRFl4TVBDQjNHbC9jeVlJekNLV2h1bHpPSElIRkJvTXhOSndmWmFialoxL2FWMXhzRXdEQXdkTFNiQzVEaGJQSUh3THFMeEZBNHErK2c4Z0p2c2lZbW00ZmRMR1lPQWdDYVdsb1BaS25RR0JzM0ErVkIxYXhMTG1KZWFtRnFORkttZElKbEN3SkRHM0FDb2c0cGhaNUptWEZlOFRGTytUWDFxV1doVHZsMW9PbGVNR1NxUW1sOFNIeGVjYXd3ejFMeTJKRDRISmd6ak8va2J4am1YcFVDRjJrRkNBWXhDYVd6aUw4c3YxWU83aEJXSW1hQkN4b1RzNk9TZXhHT1pvbUNCWFNtSkpvbDVhRVZBL2tQY1BUUXQ3ZmtGSlpuNGVVQk1UY2pLR3ArOGlOQUdCMGp5UVMxSjBrek5LODdKMURTM1E1SmtMOHRKQmxvS0ZJSmdYU3JPaHNrSE9ZUHFQRnNKc3FYbnBtWG1wTVAva0pDYWw1c0JNVGtrdGd6TDVnQUVDRGcrOWdxTE12QktZUjRHaXhYb2wrU1dKTUMxY3lmazVNQkd3MXhuK0FRQ3hKSGthM0FNQUFBPT0ifQ== -->
 <div data-pagedtable="false">
 <script data-pagedtable-source type="application/json">
 {"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["Timestamp"],"name":[1],"type":["chr"],"align":["left"]},{"label":["AirInj_LR_Louver_New"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["Inject_V_m3"],"name":[3],"type":["dbl"],"align":["right"]},{"label":["Out_T"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["Out_CO2_Avg"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["Out_PAR"],"name":[6],"type":["dbl"],"align":["right"]}],"data":[{"1":"08/25/2019 12:00 AM","2":"0.4","3":"10680","4":"25.7","5":"NA","6":"6.8","_rn_":"1"},{"1":"08/25/2019 12:15 AM","2":"0.4","3":"10680","4":"25.4","5":"NA","6":"6.3","_rn_":"2"},{"1":"08/25/2019 12:30 AM","2":"0.4","3":"10680","4":"25.1","5":"NA","6":"6.6","_rn_":"3"},{"1":"08/25/2019 12:45 AM","2":"0.4","3":"10680","4":"24.9","5":"NA","6":"6.7","_rn_":"4"},{"1":"08/25/2019 1:00 AM","2":"0.4","3":"10680","4":"24.7","5":"NA","6":"6.6","_rn_":"5"},{"1":"08/25/2019 1:15 AM","2":"0.4","3":"10680","4":"24.5","5":"NA","6":"6.8","_rn_":"6"}],"options":{"columns":{"min":{},"max":[10],"total":[6]},"rows":{"min":[10],"max":[10],"total":[6]},"pages":{}}}
   </script>
 </div>
 <!-- rnb-frame-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG4jIENoZWNrIGZvciBtaXNzaW5nIHZhbHVlcyBpbiBlYWNoIGNvbHVtbiBcbmNvbFN1bXMoaXMubmEoY28yKSlcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG4jIENoZWNrIGZvciBtaXNzaW5nIHZhbHVlcyBpbiBlYWNoIGNvbHVtbiBcbmNvbFN1bXMoaXMubmEoY2FyYm9uZGlveGlkZSkpXG5gYGAifQ== -->
 <pre class="r"><code>
 # Check for missing values in each column 
-colSums(is.na(co2))</code></pre>
+colSums(is.na(carbondioxide))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICBUaW1lc3RhbXAgQWlySW5qX0xSX0xvdXZlcl9OZXcgICAgICAgICAgSW5qZWN0X1ZfbTMgICAgICAgICAgICAgICAgT3V0X1QgXG4gICAgICAgICAgICAgICAgICAgMCAgICAgICAgICAgICAgICAgICAgMCAgICAgICAgICAgICAgICAgICAgMCAgICAgICAgICAgICAgICAgICAgMCBcbiAgICAgICAgIE91dF9DTzJfQXZnICAgICAgICAgICAgICBPdXRfUEFSIFxuICAgICAgICAgICAgICAgIDc3NDAgICAgICAgICAgICAgICAgICAgIDAgXG4ifQ== -->
-<pre><code>           Timestamp AirInj_LR_Louver_New          Inject_V_m3                Out_T 
-                   0                    0                    0                    0 
-         Out_CO2_Avg              Out_PAR 
-                7740                    0 </code></pre>
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICBUaW1lc3RhbXAgQWlySW5qX0xSX0xvdXZlcl9OZXcgICAgICAgICAgSW5qZWN0X1ZfbTMgXG4gICAgICAgICAgICAgICAgICAgMCAgICAgICAgICAgICAgICAgICAgMCAgICAgICAgICAgICAgICAgICAgMCBcbiAgICAgICAgICAgICAgIE91dF9UICAgICAgICAgIE91dF9DTzJfQXZnICAgICAgICAgICAgICBPdXRfUEFSIFxuICAgICAgICAgICAgICAgICAgIDAgICAgICAgICAgICAgICAgIDc3NDAgICAgICAgICAgICAgICAgICAgIDAgXG4ifQ== -->
+<pre><code>           Timestamp AirInj_LR_Louver_New          Inject_V_m3 
+                   0                    0                    0 
+               Out_T          Out_CO2_Avg              Out_PAR 
+                   0                 7740                    0 </code></pre>
 <!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyNNaXNzaW5nIHZhbHVlc1xuc3VtKGlzLm5hKGNvMikpXG5gYGAifQ== -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyNNaXNzaW5nIHZhbHVlc1xuc3VtKGlzLm5hKGNhcmJvbmRpb3hpZGUpKVxuYGBgIn0= -->
 <pre class="r"><code>##Missing values
-sum(is.na(co2))</code></pre>
+sum(is.na(carbondioxide))</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-output-begin eyJkYXRhIjoiWzFdIDc3NDBcbiJ9 -->
 <pre><code>[1] 7740</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuXG4jIFBlcmZvcm0gaW50ZXJwb2xhdGlvbiB3aXRoIHJ1bGU9MiB0byBmaWxsIGxlYWRpbmcvdHJhaWxpbmcgTkFzXG5jYXJib25kaW94aWRlJE91dF9DTzJfQXZnIDwtIG5hLmFwcHJveChjYXJib25kaW94aWRlJE91dF9DTzJfQXZnLCBuYS5ybSA9IEZBTFNFLCBydWxlID0gMilcbiNjYXJib25kaW94aWRlIHw+IG11dGF0ZShPdXRfQ08yX0F2ZyA9IG5hLmFwcHJveChPdXRfQ08yX0F2ZyxuYS5ybSA9IEZBTFNFKSlcblxuXG4jIEZvciBhbnkgcmVtYWluaW5nIE5BcyAoY29uc2VjdXRpdmUgbWlzc2luZyksIHVzZSBMT0NGL05PQ0JcbiNjbzIkT3V0X0NPMl9BdmcgPC0gbmEubG9jZihjbzIkT3V0X0NPMl9BdmcsIG5hLnJtID0gRkFMU0UpXG4jY28yJE91dF9DTzJfQXZnIDwtIG5hLmxvY2YoY28yJE91dF9DTzJfQXZnLCBuYS5ybSA9IEZBTFNFLCBmcm9tTGFzdCA9IFRSVUUpXG5cbiNjbzJfem9uZTMgPC0gY28yX3pvbmUzIHw+IG11dGF0ZShWQUxVRSA9IG5hLmFwcHJveChWQUxVRSwgbmEucm0gPSBGQUxTRSkpXG5cblxuIyBDaGVjayBmb3IgbWlzc2luZyB2YWx1ZXMgaW4gZWFjaCBjb2x1bW4gXG5jb2xTdW1zKGlzLm5hKGNhcmJvbmRpb3hpZGUpKVxuYGBgIn0= -->
+<pre class="r"><code>
+# Perform interpolation with rule=2 to fill leading/trailing NAs
+carbondioxide$Out_CO2_Avg &lt;- na.approx(carbondioxide$Out_CO2_Avg, na.rm = FALSE, rule = 2)
+#carbondioxide |&gt; mutate(Out_CO2_Avg = na.approx(Out_CO2_Avg,na.rm = FALSE))
+
+
+# For any remaining NAs (consecutive missing), use LOCF/NOCB
+#co2$Out_CO2_Avg &lt;- na.locf(co2$Out_CO2_Avg, na.rm = FALSE)
+#co2$Out_CO2_Avg &lt;- na.locf(co2$Out_CO2_Avg, na.rm = FALSE, fromLast = TRUE)
+
+#co2_zone3 &lt;- co2_zone3 |&gt; mutate(VALUE = na.approx(VALUE, na.rm = FALSE))
+
+
+# Check for missing values in each column 
+colSums(is.na(carbondioxide))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICBUaW1lc3RhbXAgQWlySW5qX0xSX0xvdXZlcl9OZXcgICAgICAgICAgSW5qZWN0X1ZfbTMgXG4gICAgICAgICAgICAgICAgICAgMCAgICAgICAgICAgICAgICAgICAgMCAgICAgICAgICAgICAgICAgICAgMCBcbiAgICAgICAgICAgICAgIE91dF9UICAgICAgICAgIE91dF9DTzJfQXZnICAgICAgICAgICAgICBPdXRfUEFSIFxuICAgICAgICAgICAgICAgICAgIDAgICAgICAgICAgICAgICAgICAgIDAgICAgICAgICAgICAgICAgICAgIDAgXG4ifQ== -->
+<pre><code>           Timestamp AirInj_LR_Louver_New          Inject_V_m3 
+                   0                    0                    0 
+               Out_T          Out_CO2_Avg              Out_PAR 
+                   0                    0                    0 </code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyNNaXNzaW5nIHZhbHVlc1xuc3VtKGlzLm5hKGNhcmJvbmRpb3hpZGUpKVxuYGBgIn0= -->
+<pre class="r"><code>##Missing values
+sum(is.na(carbondioxide))</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDBcbiJ9 -->
+<pre><code>[1] 0</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0NvbnZlcnRpbmcgdGhlIHRlbXBlcmF0dXJlIGZyb20gY2Vsc2l1cyB0byBrZWx2aW5cbmNhcmJvbmRpb3hpZGUkT3V0X1QgPC0gY2FyYm9uZGlveGlkZSRPdXRfVCArIDI3My4xNVxuXG5gYGAifQ== -->
+<pre class="r"><code>#Converting the temperature from celsius to kelvin
+carbondioxide$Out_T &lt;- carbondioxide$Out_T + 273.15
+</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>The preview shows you a rendered HTML copy of the contents of the
@@ -1866,7 +1901,7 @@ run any R code chunks. Instead, the output of the chunk when it was last
 run in the editor is displayed.</p>
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogImNhcmJvbmRpb3hpZGUiDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQpUaGlzIGlzIGFuIFtSIE1hcmtkb3duXShodHRwOi8vcm1hcmtkb3duLnJzdHVkaW8uY29tKSBOb3RlYm9vay4gV2hlbiB5b3UgZXhlY3V0ZSBjb2RlIHdpdGhpbiB0aGUgbm90ZWJvb2ssIHRoZSByZXN1bHRzIGFwcGVhciBiZW5lYXRoIHRoZSBjb2RlLiANCg0KVHJ5IGV4ZWN1dGluZyB0aGlzIGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqUnVuKiBidXR0b24gd2l0aGluIHRoZSBjaHVuayBvciBieSBwbGFjaW5nIHlvdXIgY3Vyc29yIGluc2lkZSBpdCBhbmQgcHJlc3NpbmcgKkN0cmwrU2hpZnQrRW50ZXIqLiANCg0KYGBge3IsIGxpYnJhcmllc30NCg0KIyNJbnN0YWxsaW5nIGxpYnJhcmllcw0KaWYoIXJlcXVpcmUoJ3BhY21hbicpKQ0KICBpbnN0YWxsLnBhY2thZ2VzKCdwYWNtYW4nKQ0KDQojIyBMb2FkaW5nIGxpYnJhcmllcw0KcGFjbWFuIDo6IHBfbG9hZCgNCiAgUkNvbG9yQnJld2VyLA0KICBwbG90bHksDQogIGphbml0b3IsDQogIHRpZHl0ZXh0LA0KICBwYXRjaHdvcmssDQogIGNvbG9yc3BhY2UsDQogIGRwbHlyLA0KICBkYnNjYW4sDQogIGx1YnJpZGF0ZSwNCiAgcmVhZHIsDQogIEdHYWxseSwNCiAgcmVzaGFwZTIsDQogIHRpZHlyLA0KICBGTk4sDQogIHpvbykNCmBgYA0KDQpgYGB7cn0NCiMjVXNpbmcgdGhlIGNhcmJvbmRpb3hpZGUgZGF0YSBmaWxlIA0KDQojTG9hZGluZyB0aGUgZmlsZQ0KY2FyYm9uZGlveGlkZSA8LSByZWFkLmNzdignZGF0YS9PdXRzaWRlX0Fpcl9pbmplY3RfQ08yLnR4dCcpDQpjbzIgPC0gY2FyYm9uZGlveGlkZQ0KDQojVGFraW5nIHRoZSBmaXJzdCA1IHJvd3MNCmhlYWQoY28yKQ0KDQojIENoZWNrIGZvciBtaXNzaW5nIHZhbHVlcyBpbiBlYWNoIGNvbHVtbiANCmNvbFN1bXMoaXMubmEoY28yKSkNCg0KIyNNaXNzaW5nIHZhbHVlcw0Kc3VtKGlzLm5hKGNvMikpDQoNCmBgYA0KYGBge3J9DQoNCiMgUGVyZm9ybSBpbnRlcnBvbGF0aW9uIHdpdGggcnVsZT0yIHRvIGZpbGwgbGVhZGluZy90cmFpbGluZyBOQXMNCmNvMiRPdXRfQ08yX0F2ZyA8LSBuYS5hcHByb3goY28yJE91dF9DTzJfQXZnLCBuYS5ybSA9IEZBTFNFLCBydWxlID0gMikNCg0KIyBGb3IgYW55IHJlbWFpbmluZyBOQXMgKGNvbnNlY3V0aXZlIG1pc3NpbmcpLCB1c2UgTE9DRi9OT0NCDQojY28yJE91dF9DTzJfQXZnIDwtIG5hLmxvY2YoY28yJE91dF9DTzJfQXZnLCBuYS5ybSA9IEZBTFNFKQ0KI2NvMiRPdXRfQ08yX0F2ZyA8LSBuYS5sb2NmKGNvMiRPdXRfQ08yX0F2ZywgbmEucm0gPSBGQUxTRSwgZnJvbUxhc3QgPSBUUlVFKQ0KDQojIFZlcmlmeSByZXN1bHRzDQpzdW0oaXMubmEoY28yJE91dF9DTzJfQXZnKSkgDQpoZWFkKGNvMikNCg0KYGBgDQoNCmBgYHtyfQ0KDQoNCmBgYA0KDQpUaGUgcHJldmlldyBzaG93cyB5b3UgYSByZW5kZXJlZCBIVE1MIGNvcHkgb2YgdGhlIGNvbnRlbnRzIG9mIHRoZSBlZGl0b3IuIENvbnNlcXVlbnRseSwgdW5saWtlICpLbml0KiwgKlByZXZpZXcqIGRvZXMgbm90IHJ1biBhbnkgUiBjb2RlIGNodW5rcy4gSW5zdGVhZCwgdGhlIG91dHB1dCBvZiB0aGUgY2h1bmsgd2hlbiBpdCB3YXMgbGFzdCBydW4gaW4gdGhlIGVkaXRvciBpcyBkaXNwbGF5ZWQuDQoNCg==</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogImNhcmJvbmRpb3hpZGUiDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQpUaGlzIGlzIGFuIFtSIE1hcmtkb3duXShodHRwOi8vcm1hcmtkb3duLnJzdHVkaW8uY29tKSBOb3RlYm9vay4gV2hlbiB5b3UgZXhlY3V0ZSBjb2RlIHdpdGhpbiB0aGUgbm90ZWJvb2ssIHRoZSByZXN1bHRzIGFwcGVhciBiZW5lYXRoIHRoZSBjb2RlLiANCg0KVHJ5IGV4ZWN1dGluZyB0aGlzIGNodW5rIGJ5IGNsaWNraW5nIHRoZSAqUnVuKiBidXR0b24gd2l0aGluIHRoZSBjaHVuayBvciBieSBwbGFjaW5nIHlvdXIgY3Vyc29yIGluc2lkZSBpdCBhbmQgcHJlc3NpbmcgKkN0cmwrU2hpZnQrRW50ZXIqLiANCg0KYGBge3IsIGxpYnJhcmllc30NCg0KIyNJbnN0YWxsaW5nIGxpYnJhcmllcw0KaWYoIXJlcXVpcmUoJ3BhY21hbicpKQ0KICBpbnN0YWxsLnBhY2thZ2VzKCdwYWNtYW4nKQ0KDQojIyBMb2FkaW5nIGxpYnJhcmllcw0KcGFjbWFuIDo6IHBfbG9hZCgNCiAgUkNvbG9yQnJld2VyLA0KICBwbG90bHksDQogIGphbml0b3IsDQogIHRpZHl0ZXh0LA0KICBwYXRjaHdvcmssDQogIGNvbG9yc3BhY2UsDQogIGRwbHlyLA0KICBkYnNjYW4sDQogIGx1YnJpZGF0ZSwNCiAgcmVhZHIsDQogIEdHYWxseSwNCiAgcmVzaGFwZTIsDQogIHRpZHlyLA0KICBGTk4sDQogIHpvbykNCmBgYA0KDQoNCg0KDQoNCmBgYHtyfQ0KDQojI1VzaW5nIHRoZSBjYXJib25kaW94aWRlIGRhdGEgZmlsZSANCg0KI0xvYWRpbmcgdGhlIGZpbGUNCmNvMiA8LSByZWFkLmNzdignZGF0YS9PdXRzaWRlX0Fpcl9pbmplY3RfQ08yLnR4dCcpDQpjYXJib25kaW94aWRlIDwtIGNvMg0KDQojVGFraW5nIHRoZSBmaXJzdCA1IHJvd3MNCmhlYWQoY2FyYm9uZGlveGlkZSkNCg0KIyBDaGVjayBmb3IgbWlzc2luZyB2YWx1ZXMgaW4gZWFjaCBjb2x1bW4gDQpjb2xTdW1zKGlzLm5hKGNhcmJvbmRpb3hpZGUpKQ0KDQojI01pc3NpbmcgdmFsdWVzDQpzdW0oaXMubmEoY2FyYm9uZGlveGlkZSkpDQoNCmBgYA0KDQpgYGB7cn0NCg0KIyBQZXJmb3JtIGludGVycG9sYXRpb24gd2l0aCBydWxlPTIgdG8gZmlsbCBsZWFkaW5nL3RyYWlsaW5nIE5Bcw0KY2FyYm9uZGlveGlkZSRPdXRfQ08yX0F2ZyA8LSBuYS5hcHByb3goY2FyYm9uZGlveGlkZSRPdXRfQ08yX0F2ZywgbmEucm0gPSBGQUxTRSwgcnVsZSA9IDIpDQojY2FyYm9uZGlveGlkZSB8PiBtdXRhdGUoT3V0X0NPMl9BdmcgPSBuYS5hcHByb3goT3V0X0NPMl9BdmcsbmEucm0gPSBGQUxTRSkpDQoNCg0KIyBGb3IgYW55IHJlbWFpbmluZyBOQXMgKGNvbnNlY3V0aXZlIG1pc3NpbmcpLCB1c2UgTE9DRi9OT0NCDQojY28yJE91dF9DTzJfQXZnIDwtIG5hLmxvY2YoY28yJE91dF9DTzJfQXZnLCBuYS5ybSA9IEZBTFNFKQ0KI2NvMiRPdXRfQ08yX0F2ZyA8LSBuYS5sb2NmKGNvMiRPdXRfQ08yX0F2ZywgbmEucm0gPSBGQUxTRSwgZnJvbUxhc3QgPSBUUlVFKQ0KDQojY28yX3pvbmUzIDwtIGNvMl96b25lMyB8PiBtdXRhdGUoVkFMVUUgPSBuYS5hcHByb3goVkFMVUUsIG5hLnJtID0gRkFMU0UpKQ0KDQoNCiMgQ2hlY2sgZm9yIG1pc3NpbmcgdmFsdWVzIGluIGVhY2ggY29sdW1uIA0KY29sU3Vtcyhpcy5uYShjYXJib25kaW94aWRlKSkNCg0KIyNNaXNzaW5nIHZhbHVlcw0Kc3VtKGlzLm5hKGNhcmJvbmRpb3hpZGUpKQ0KDQoNCmBgYA0KYGBge3J9DQojQ29udmVydGluZyB0aGUgdGVtcGVyYXR1cmUgZnJvbSBjZWxzaXVzIHRvIGtlbHZpbg0KY2FyYm9uZGlveGlkZSRPdXRfVCA8LSBjYXJib25kaW94aWRlJE91dF9UICsgMjczLjE1DQoNCmBgYA0KDQoNCg0KDQpgYGB7cn0NCg0KIyBUb3RhbCByYWluZm9yZXN0IHZvbHVtZSBpbiBjdWJpYyBtZXRlcnMNClZfcmFpbmZvcmVzdCA8LSAyNjcwMA0KUCA8LSA4ODQwMA0KUiA8LSA4LjMxNDQ2ICAgDQoNCiNDYWxjdWxhdGluZyBjYXJib25kaW94aWRlIG1vbGVzDQpjbzJfbW9sZXMgPC0gZnVuY3Rpb24odm9sdW1lLCB0ZW1wLCBjbzIpew0KICBuX2FpciA8LSAoUCAqIHZvbHVtZSkgLyAoUiAqIHRlbXApDQogIG5fY28yIDwtIG5fYWlyICogKGNvMiAvIDFlNikNCiAgcmV0dXJuKG5fY28yKQ0KICANCn0NCg0KI0NhbGN1bGF0aW5nIHRoZSBjbzIgZW50ZXJpbmcgYW5kIGV4aXRpbmcNCmNhcmJvbmRpb3hpZGUgPC0gY2FyYm9uZGlveGlkZSB8PiBtdXRhdGUoTW9sZXNfY28yX2luID0gY28yX21vbGVzKEluamVjdF9WX20zLCBPdXRfVCwgT3V0X0NPMl9BdmcpKQ0KDQojdW5kZXJzdGFuZGluZyB0aGUgbW9sZXMgb2YgY28yX291dCwgdGFraW5nIHRoZSBwcmV2aW91cyBpbmplY3Rpb24gYW5kIHRoZSBleGNoYW5nZSBmcmFjdGlvbg0KY2FyYm9uZGlveGlkZSA8LSBjYXJib25kaW94aWRlIHw+IG11dGF0ZShNb2xlc19jbzJfb3V0ID0gbGFnKE1vbGVzX2NvMl9pbikgKiBBaXJJbmpfTFJfTG91dmVyX05ldykNCg0KI1RyZWF0aW5nIHRoZSBmaXJzdCByb3cgY29ycmVjdGx5DQpjYXJib25kaW94aWRlIDwtIGNhcmJvbmRpb3hpZGUgfD4gbXV0YXRlKE1vbGVzX2NvMl9vdXQgPSBpZmVsc2UoaXMubmEoTW9sZXNfY28yX291dCksIDAsIE1vbGVzX2NvMl9vdXQpKQ0KDQojQ2FsY3VsYXRpbmcgdGhlIG5ldCBjbzIgDQpjYXJib25kaW94aWRlPC0gY2FyYm9uZGlveGlkZSB8PiBtdXRhdGUoTmV0X0NPMiA9IE1vbGVzX2NvMl9pbiAtIE1vbGVzX2NvMl9vdXQpDQoNCg0KDQoNCg0KDQpgYGANCg0KVGhlIHByZXZpZXcgc2hvd3MgeW91IGEgcmVuZGVyZWQgSFRNTCBjb3B5IG9mIHRoZSBjb250ZW50cyBvZiB0aGUgZWRpdG9yLiBDb25zZXF1ZW50bHksIHVubGlrZSAqS25pdCosICpQcmV2aWV3KiBkb2VzIG5vdCBydW4gYW55IFIgY29kZSBjaHVua3MuIEluc3RlYWQsIHRoZSBvdXRwdXQgb2YgdGhlIGNodW5rIHdoZW4gaXQgd2FzIGxhc3QgcnVuIGluIHRoZSBlZGl0b3IgaXMgZGlzcGxheWVkLg0KDQo=</div>
 
 
 

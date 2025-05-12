@@ -472,10 +472,10 @@ co2_zone3 &lt;- co2_zone3 %&gt;% filter(year(TIMESTAMP) == 2020)
                            
 
 ##  Counting the number as the readings takes place for every 15 min
-readings_per_day &lt;- co2_zone3 |&gt; group_by(Date = date(TIMESTAMP)) %&gt;% summarize(Readings = n())
+readings_per_day_z3 &lt;- co2_zone3 |&gt; group_by(Date = date(TIMESTAMP)) %&gt;% summarize(Readings = n())
 
 ##Missing date readings
-missing_day &lt;- readings_per_day |&gt; filter(Readings != 96)
+missing_day &lt;- readings_per_day_z3 |&gt; filter(Readings != 96)
 
 cat(&quot;Missing dates&quot;)</code></pre>
 <pre><code>## Missing dates</code></pre>
@@ -566,8 +566,8 @@ print(mean_value_per_day)</code></pre>
 ## # ℹ 57 more rows</code></pre>
 </div>
 </div>
-<div id="visualizing-daily-crabondioxide-concentration-trends-in-2020" class="section level3">
-<h3>Visualizing Daily Crabondioxide Concentration Trends in 2020</h3>
+<div id="visualizing-daily-carbondioxide-concentration-trends-in-2020" class="section level3">
+<h3>Visualizing Daily Carbondioxide Concentration Trends in 2020</h3>
 <pre class="r"><code># Plot daily mean values
 ggplot(mean_value_per_day, 
        aes(x = Date, y = Mean)) +
@@ -717,11 +717,11 @@ colSums(is.na(ne_humidity))</code></pre>
 sum(is.na(ne_humidity))</code></pre>
 <pre><code>## [1] 0</code></pre>
 <pre class="r"><code>## Filtering out the &#39;2020&#39; data from humidity dataframe
-ne_humidity_2020 &lt;- ne_humidity |&gt; filter(year(DateTime) == 2020)
+ne_humid_2020 &lt;- ne_humidity |&gt; filter(year(DateTime) == 2020)
                            
                            
 ##  Counting the number as the readings takes place for every 15 min
-readings_per_day_humid &lt;- ne_humidity_2020 |&gt; group_by(Date = date(DateTime)) %&gt;% summarize(Readings = n())
+readings_per_day_humid &lt;- ne_humid_2020 |&gt; group_by(Date = date(DateTime)) %&gt;% summarize(Readings = n())
 
 ##Missing date readings
 missing_day_humid &lt;- readings_per_day_humid |&gt; filter(Readings != 96)
@@ -737,7 +737,7 @@ Tower with Relative Humidity.</h4>
 <p>Generated new columns for calibrated values at each tower height
 (100m, 300m, 700m, 1300m, 2000m)</p>
 <pre class="r"><code>#Generating new columns for the humidity dataframe
-ne_humidity_2020 &lt;- ne_humidity_2020 %&gt;%
+ne_humid_2020 &lt;- ne_humid_2020 %&gt;%
   mutate(
     RH_NE_100_Corr  = TRF_NETower_100_HMP45  * 1.038 + 1.0,
     RH_NE_300_Corr  = TRF_NETower_300_HMP45  * 0.986 - 2.1,
@@ -747,7 +747,7 @@ ne_humidity_2020 &lt;- ne_humidity_2020 %&gt;%
    )
 
 # View the updated dataframe
-head(ne_humidity_2020)</code></pre>
+head(ne_humid_2020)</code></pre>
 <pre><code>##           DateTime TRF_NETower_100_HMP45 TRF_NETower_300_HMP45
 ## 1 2020/01/01 00:00                 60.20                 62.09
 ## 2 2020/01/01 00:15                 60.20                 62.01
@@ -774,10 +774,10 @@ head(ne_humidity_2020)</code></pre>
 <h4>Performed the calculation as by taking the formula and it’s the
 value for each column that is each sensor at particular heights.</h4>
 <pre class="r"><code># Select columns starting with &quot;RH&quot;
-rh_columns &lt;- grep(&quot;RH&quot;, names(ne_humidity_2020), value = TRUE)
+rh_columns &lt;- grep(&quot;RH&quot;, names(ne_humid_2020), value = TRUE)
 
 # Subset the data using the selected column names
-rh_data &lt;- ne_humidity_2020[, rh_columns]
+rh_data &lt;- ne_humid_2020[, rh_columns]
 
 # Calculate the mean of those columns
 ne_humid_mean &lt;- colMeans(rh_data)
@@ -790,10 +790,10 @@ cat(&quot;Mean of the columns in the realtive humidity columns of the dataframe&
 ##        78.50448        73.57304        68.11770        70.69086        68.35277</code></pre>
 <p>#Outliers for the North East Tower of Relative Humidity</p>
 <pre class="r"><code># Select columns starting with &quot;RH&quot;
-rh_columns &lt;- grep(&quot;^RH&quot;, names(ne_humidity_2020), value = TRUE)
+rh_columns &lt;- grep(&quot;^RH&quot;, names(ne_humid_2020), value = TRUE)
 
 # Considering values of those columns
-humidity_rh &lt;- ne_humidity_2020[, rh_columns]
+humidity_rh &lt;- ne_humid_2020[, rh_columns]
 
 # Function to detect outliers using KNN
 detect_outliers &lt;- function(data) {
@@ -873,7 +873,6 @@ missing measurements.</p>
 <pre class="r"><code>##Importing the temperature dataset
 temperature1 &lt;- read.csv(&#39;data/NE_TowerTemperature.csv&#39;, skip = 4, header = FALSE)
 
-
 #Taking a copy of it
 ne_temperature &lt;- data.frame(temperature1)
 
@@ -914,11 +913,11 @@ sum(is.na(ne_temperature))</code></pre>
 the North East Tower - the temperature. Making sure twice on null values
 for the entire table and also in each of the column.</h2>
 <pre class="r"><code>## Filtering out the &#39;2020&#39; data from temperature dataframe
-ne_temperature_2020 &lt;- ne_temperature |&gt; filter(year(DateTime) == 2020)
+ne_temp_2020 &lt;- ne_temperature |&gt; filter(year(DateTime) == 2020)
                            
                            
 ##  Counting the number as the readings takes place for every 15 min
-readings_per_day_temp&lt;- ne_temperature_2020 |&gt; group_by(Date = date(DateTime)) %&gt;% summarize(Readings = n())
+readings_per_day_temp&lt;- ne_temp_2020 |&gt; group_by(Date = date(DateTime)) %&gt;% summarize(Readings = n())
 
 ##Missing date readingsof the temperature
 missing_day_temp &lt;- readings_per_day_temp |&gt; filter(Readings != 96)
@@ -938,7 +937,7 @@ Relative Humidity.</h4>
 (100m, 300m, 700m, 1300m, 2000m)</p>
 <pre class="r"><code>#Generating new columns for the temperature dataframe
 
-ne_temperature_2020 &lt;- ne_temperature_2020 %&gt;%
+ne_temp_2020 &lt;- ne_temp_2020 %&gt;%
   mutate(
     T_NE_100_Corr  = TRF_NETower_100_HMP45 * 1.032 - 0.58,
     T_NE_300_Corr  = TRF_NETower_300_HMP45 * 0.9883 + 0.6049,
@@ -948,7 +947,7 @@ ne_temperature_2020 &lt;- ne_temperature_2020 %&gt;%
    )
 
 # View the updated dataframe
-head(ne_temperature_2020)</code></pre>
+head(ne_temp_2020)</code></pre>
 <pre><code>##           DateTime TRF_NETower_100_HMP45 TRF_NETower_300_HMP45
 ## 1 2020/01/01 00:00                 21.83                 23.36
 ## 2 2020/01/01 00:15                 21.82                 23.37
@@ -976,10 +975,10 @@ head(ne_temperature_2020)</code></pre>
 value for each column that is each sensor at particular heights of North
 East tower of Temperature values.</h4>
 <pre class="r"><code># Select columns starting with &quot;T_NE&quot;
-t_columns &lt;- grep(&quot;T_NE&quot;, names(ne_temperature_2020), value = TRUE)
+t_columns &lt;- grep(&quot;T_NE&quot;, names(ne_temp_2020), value = TRUE)
 
 # Subset the data using the selected column names
-t_data &lt;- ne_temperature_2020[, t_columns]
+t_data &lt;- ne_temp_2020[, t_columns]
 
 # Calculate the mean of those columns
 ne_temp_mean &lt;- colMeans(t_data)
@@ -992,10 +991,10 @@ cat(&quot;Mean of the columns in the temperature dataframe&quot;)</code></pre>
 ##       22.63276       24.11882       25.40890       25.26319       25.95481</code></pre>
 <p>#Finally finding out the outliers of the NE-Temperature</p>
 <pre class="r"><code># Select the corrected columns starting with &quot;T_NE&quot;
-temp_columns &lt;- grep(&quot;^T_NE&quot;, names(ne_temperature_2020), value = TRUE)
+temp_columns &lt;- grep(&quot;^T_NE&quot;, names(ne_temp_2020), value = TRUE)
 
 # Considering values of those columns
-temp_df &lt;- ne_temperature_2020[, temp_columns]
+temp_df &lt;- ne_temp_2020[, temp_columns]
 
 # Function to detect outliers using KNN
 detect_outlier_temp &lt;- function(data) {
@@ -1143,17 +1142,25 @@ nw_humid &lt;- nw_humid[, 1:5]
 
 # Reassigning the column names as needed
 colnames(nw_humid) &lt;- c(&quot;DateTime&quot;, &quot;TRF_NWTower_100_HMP45&quot;, &quot;TRF_NWTower_300_HMP45&quot;,&quot;TRF_NWTower_700_HMP45&quot;,&quot;TRF_NWTower_1300_HMP45&quot;)</code></pre>
-<p>#MOUNTAIN TOWER - TEMPERATURE AND RELATIVE HUMIDITY 1. Imported
-15-minute resolution humidity/temperature data from Mountain Tower
-sensors (100m–2000m elevations).<br />
-2. Preprocessed by removing null columns, standardizing headers, and
+</div>
+<div id="mountain-tower---temperature-and-relative-humidity" class="section level3">
+<h3>MOUNTAIN TOWER - TEMPERATURE AND RELATIVE HUMIDITY</h3>
+<ol style="list-style-type: decimal">
+<li>Imported 15-minute resolution humidity/temperature data from
+Mountain Tower sensors (100m–2000m elevations).<br />
+</li>
+<li>Preprocessed by removing null columns, standardizing headers, and
 preserving raw data copies.<br />
-3. Structured datasets with consistent columns: <code>DateTime</code> +
+</li>
+<li>Structured datasets with consistent columns: <code>DateTime</code> +
 5 elevation-specific sensor readings.<br />
-4. Verified data integrity—no missing values detected during initial
+</li>
+<li>Verified data integrity—no missing values detected during initial
 inspection.<br />
-5. Prepared for calibration and integration with other tower datasets
-for microclimate analysis.</p>
+</li>
+<li>Prepared for calibration and integration with other tower datasets
+for microclimate analysis.</li>
+</ol>
 <pre class="r"><code>#loading the file
 temperature4 &lt;- read.csv(&#39;C:/Users/ual-laptop/Desktop/NE/Mtn_Tower_Temperature.csv&#39;, skip = 4, header = FALSE)
 
@@ -1361,35 +1368,44 @@ s_humid_2020 &lt;- s_humid_2020 %&gt;%
 sensor data. Outputs preview of aggregated daily values showing:</p>
 <p>Zone_1_Temp_Avg: Mean daily temperature across 100m/300m sensors
 Zone_1_RH_Avg: Mean daily relative humidity across 100m/300m sensors</p>
-<pre class="r"><code>zone1_data &lt;- s_temp_2020 %&gt;%
-  mutate(Date = as.Date(DateTime)) %&gt;%
+<pre class="r"><code>zone1_data &lt;- s_temp_2020 |&gt;
+  select(DateTime, T_S_100_Corr, T_S_300_Corr) %&gt;%
+  left_join(
+    s_humid_2020 %&gt;%
+      select(DateTime, RH_S_100_Corr, RH_S_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_temp_2020 %&gt;%
+      select(DateTime, T_NE_100_Corr, T_NE_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_humid_2020 %&gt;%
+      select(DateTime, RH_NE_100_Corr, RH_NE_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  mutate(Date = as.Date(DateTime, format = &quot;%Y/%m/%d %H:%M&quot;)) %&gt;%  
   group_by(Date) %&gt;%
   summarize(
-    Zone_1_Temp_Avg = mean(c(s_temp_2020$T_S_100_Corr, 
-                             s_temp_2020$T_S_300_Corr, 
-                             temperature1$T_NE_100_Corr, 
-                             temperature1$T_NE_300_Corr), na.rm = TRUE),
-    
-    Zone_1_RH_Avg = mean(c(s_humid_2020$RH_S_100_Corr,
-                           s_humid_2020$RH_S_300_Corr, 
-                           humidity1$RH_NE_100_Corr, 
-                           humidity1$RH_NE_300_Corr), na.rm = TRUE)
+    Zone_1_Temp_Avg = mean(c(T_S_100_Corr, T_S_300_Corr, T_NE_100_Corr, T_NE_300_Corr), na.rm = TRUE),
+    Zone_1_RH_Avg = mean(c(RH_S_100_Corr, RH_S_300_Corr, RH_NE_100_Corr, RH_NE_300_Corr), na.rm = TRUE),
+    .groups = &quot;drop&quot;
   )
 
-
-# View first few rows of Zone 1 data
+# View result
 print(&quot;Zone 1 Data:&quot;)</code></pre>
 <pre><code>## [1] &quot;Zone 1 Data:&quot;</code></pre>
 <pre class="r"><code>print(head(zone1_data))</code></pre>
 <pre><code>## # A tibble: 6 × 3
 ##   Date       Zone_1_Temp_Avg Zone_1_RH_Avg
 ##   &lt;date&gt;               &lt;dbl&gt;         &lt;dbl&gt;
-## 1 2020-01-01            24.2          81.2
-## 2 2020-01-02            24.2          81.2
-## 3 2020-01-03            24.2          81.2
-## 4 2020-01-04            24.2          81.2
-## 5 2020-01-05            24.2          81.2
-## 6 2020-01-06            24.2          81.2</code></pre>
+## 1 2020-01-01            25.3          67.4
+## 2 2020-01-02            24.5          73.9
+## 3 2020-01-03            25.0          63.5
+## 4 2020-01-04            25.5          62.8
+## 5 2020-01-05            24.6          79.3
+## 6 2020-01-06            24.1          72.8</code></pre>
 </div>
 </div>
 <div id="zone-2" class="section level3">
@@ -1401,42 +1417,77 @@ Output includes:</p>
 (700-1300), Northeast (700-1300))</p>
 <p>Zone_2_Temp_Avg: Mean temperature (100m-1300m sensors) Zone_2_RH_Avg:
 Mean relative humidity (100m-1300m sensors)</p>
-<pre class="r"><code># Zone 2 calculation (Temperature and Humidity from NW (100-300), South (700-1300), Northeast (700-1300))
+<pre class="r"><code># Zone 2 calculation (Temperature and Humidity from NW (100, 300, 700), South (700, 1300), Northeast (700,1300)) and Mountain Tower (100,300)
 
 zone2_data &lt;- nw_temp_2020 %&gt;%
-  mutate(Date = as.Date(DateTime)) %&gt;%
+  select(DateTime, T_NW_100_Corr, T_NW_300_Corr, T_NW_700_Corr) %&gt;%
+  left_join(
+    s_temp_2020 %&gt;%
+      select(DateTime, T_S_700_Corr, T_S_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_temp_2020 %&gt;%
+      select(DateTime, T_NE_700_Corr, T_NE_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    mtn_temp_2020 %&gt;%
+      select(DateTime, T_MTN_100_Corr, T_MTN_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    nw_humid_2020 %&gt;%
+      select(DateTime, RH_NW_100_Corr, RH_NW_300_Corr, RH_NW_700_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    s_humid_2020 %&gt;%
+      select(DateTime, RH_S_700_Corr, RH_S_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_humid_2020 %&gt;%
+      select(DateTime, RH_NE_700_Corr, RH_NE_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    mtn_humid_2020 %&gt;%
+      select(DateTime, RH_MTN_100_Corr, RH_MTN_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  mutate(Date = as.Date(DateTime, format = &quot;%Y/%m/%d %H:%M&quot;)) %&gt;%
   group_by(Date) %&gt;%
   summarize(
     Zone_2_Temp_Avg = mean(c(
-      nw_temp_2020$T_NW_100_Corr, 
-      nw_temp_2020$T_NW_300_Corr, 
-      s_temp_2020$T_S_700_Corr, 
-      s_temp_2020$T_S_1300_Corr, 
-      temperature1$T_NE_700_Corr, 
-      temperature1$T_NE_1300_Corr), na.rm = TRUE),
-      
+      T_NW_100_Corr, T_NW_300_Corr, T_NW_700_Corr,
+      T_S_700_Corr, T_S_1300_Corr,
+      T_NE_700_Corr, T_NE_1300_Corr,
+      T_MTN_100_Corr, T_MTN_300_Corr
+    ), na.rm = TRUE),
+    
     Zone_2_RH_Avg = mean(c(
-      nw_humid$RH_NW_100_Corr, 
-      nw_humid$RH_NW_300_Corr, 
-      s_humid_2020$RH_S_700_Corr, 
-      s_humid_2020$RH_S_1300_Corr, 
-      humidity1$RH_NE_700_Corr, 
-      humidity1$RH_NE_1300_Corr), na.rm = TRUE)
+      RH_NW_100_Corr, RH_NW_300_Corr, RH_NW_700_Corr,
+      RH_S_700_Corr, RH_S_1300_Corr,
+      RH_NE_700_Corr, RH_NE_1300_Corr,
+      RH_MTN_100_Corr, RH_MTN_300_Corr
+    ), na.rm = TRUE),
+    .groups = &quot;drop&quot;
   )
 
-# View first few rows of Zone 2 data
+# View result
 print(&quot;Zone 2 Data:&quot;)</code></pre>
 <pre><code>## [1] &quot;Zone 2 Data:&quot;</code></pre>
 <pre class="r"><code>print(head(zone2_data))</code></pre>
 <pre><code>## # A tibble: 6 × 3
 ##   Date       Zone_2_Temp_Avg Zone_2_RH_Avg
 ##   &lt;date&gt;               &lt;dbl&gt;         &lt;dbl&gt;
-## 1 2020-01-01            25.5          74.3
-## 2 2020-01-02            25.5          74.3
-## 3 2020-01-03            25.5          74.3
-## 4 2020-01-04            25.5          74.3
-## 5 2020-01-05            25.5          74.3
-## 6 2020-01-06            25.5          74.3</code></pre>
+## 1 2020-01-01            27.0          62.7
+## 2 2020-01-02            25.3          72.2
+## 3 2020-01-03            25.7          61.1
+## 4 2020-01-04            26.3          60.6
+## 5 2020-01-05            26.3          74.7
+## 6 2020-01-06            25.9          68.0</code></pre>
 </div>
 <div id="zone---3" class="section level3">
 <h3>Zone - 3</h3>
@@ -1448,41 +1499,82 @@ Zone_1_RH_Avg: Mean daily relative humidity across (1300-2000)
 sensors</p>
 <p>Zone 3 calculation (Temperature and Humidity from South (2000), NW
 (1300), Mtn (1300-2000), Northeast (2000))</p>
-<pre class="r"><code># Zone 3 calculation (Temperature and Humidity from South (2000), NW (1300), Mtn (1300-2000), Northeast (2000))
+<pre class="r"><code># Zone 3 calculation (Temperature and Humidity from South (2000), NW (1300), Mtn (700, 1300), Northeast (2000))
 
-zone3_data &lt;- nw_temp_2020 %&gt;%
-  mutate(Date = as.Date(DateTime)) %&gt;%
+zone3_data &lt;- s_temp_2020 %&gt;%
+  select(DateTime, T_S_2000_Corr) %&gt;%
+  left_join(
+    nw_temp_2020 %&gt;%
+      select(DateTime, T_NW_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    mtn_temp_2020 %&gt;%
+      select(DateTime, T_MTN_700_Corr, T_MTN_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_temp_2020 %&gt;%
+      select(DateTime, T_NE_2000_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    s_humid_2020 %&gt;%
+      select(DateTime, RH_S_2000_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    nw_humid_2020 %&gt;%
+      select(DateTime, RH_NW_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    mtn_humid_2020 %&gt;%
+      select(DateTime, RH_MTN_700_Corr, RH_MTN_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_humid_2020 %&gt;%
+      select(DateTime, RH_NE_2000_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  mutate(Date = as.Date(DateTime, format = &quot;%Y/%m/%d %H:%M&quot;)) %&gt;%
   group_by(Date) %&gt;%
   summarize(
     Zone_3_Temp_Avg = mean(c(
-      s_temp_2020$T_S_2000_Corr, 
-      nw_temp_2020$T_NW_1300_Corr, 
-      mtn_temp_2020$T_Mtn_1300_Corr, 
-      mtn_temp_2020$T_Mtn_2000_Corr, 
-      temperature1$T_NE_2000_Corr), na.rm = TRUE),
-      
+      T_S_2000_Corr,
+      T_NW_1300_Corr,
+      T_MTN_700_Corr, T_MTN_1300_Corr,
+      T_NE_2000_Corr
+    ), na.rm = TRUE),
+    
     Zone_3_RH_Avg = mean(c(
-      s_humid_2020$RH_S_2000_Corr, 
-      nw_humid_2020$RH_NW_1300_Corr, 
-      mtn_humid_2020$RH_Mtn_1300_Corr, 
-      mtn_humid_2020$RH_Mtn_2000_Corr, 
-      humidity1$RH_NE_2000_Corr), na.rm = TRUE)
+      RH_S_2000_Corr,
+      RH_NW_1300_Corr,
+      RH_MTN_700_Corr, RH_MTN_1300_Corr,
+      RH_NE_2000_Corr
+    ), na.rm = TRUE),
+    
+    .groups = &quot;drop&quot;
   )
 
-# View first few rows of Zone 3 data
+# View result
 print(&quot;Zone 3 Data:&quot;)</code></pre>
 <pre><code>## [1] &quot;Zone 3 Data:&quot;</code></pre>
 <pre class="r"><code>print(head(zone3_data))</code></pre>
 <pre><code>## # A tibble: 6 × 3
 ##   Date       Zone_3_Temp_Avg Zone_3_RH_Avg
 ##   &lt;date&gt;               &lt;dbl&gt;         &lt;dbl&gt;
-## 1 2020-01-01            26.5          71.2
-## 2 2020-01-02            26.5          71.2
-## 3 2020-01-03            26.5          71.2
-## 4 2020-01-04            26.5          71.2
-## 5 2020-01-05            26.5          71.2
-## 6 2020-01-06            26.5          71.2</code></pre>
-<p>#Zone wise calculation of no of moles</p>
+## 1 2020-01-01            28.1          60.3
+## 2 2020-01-02            26.5          68.6
+## 3 2020-01-03            26.6          58.9
+## 4 2020-01-04            27.4          58.5
+## 5 2020-01-05            27.8          70.5
+## 6 2020-01-06            27.2          65.1</code></pre>
+</div>
+</div>
+<div id="zone-wise-calculation-of-no-of-moles" class="section level2">
+<h2>Zone wise calculation of no of moles</h2>
 <pre class="r"><code>#Loading the files for the zone1,zone2,zone3 of the carbondioxide files
 co2_zone1 &lt;- read.csv(&#39;data/SCADA_LOLNDCO2_1M.csv&#39;, skip = 2)
 co2_zone2 &lt;- read.csv(&#39;data/SCADA_LOLNDCO2_13M.csv&#39;, skip = 2)
@@ -1509,7 +1601,6 @@ colSums(is.na(co2_zone3))</code></pre>
 ##              0              0              0              0              0 
 ## TRENDFLAGS_TAG     STATUS_TAG     Is_Outlier 
 ##              0              0              0</code></pre>
-</div>
 <div id="handling-missing-carbondioxide-data-across-zones" class="section level3">
 <h3>Handling Missing Carbondioxide Data Across Zones</h3>
 <p>Zones 1 and 2 had 14 missing carbondioxide values, which were
@@ -1530,6 +1621,33 @@ colSums(is.na(co2_zone1))</code></pre>
 ##              0              0             14             14              0 
 ## TRENDFLAGS_TAG     STATUS_TAG 
 ##              0              0</code></pre>
+<pre class="r"><code># Convert TIMESTAMP to a datetime format
+co2_zone1 &lt;- co2_zone1 %&gt;% mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = &quot;%Y/%m/%d %H:%M:%S&quot;))|&gt; filter(year(TIMESTAMP) == 2020)
+co2_zone2 &lt;- co2_zone2 %&gt;% mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = &quot;%Y/%m/%d %H:%M:%S&quot;))|&gt; filter(year(TIMESTAMP) == 2020)
+
+                           
+##  Counting the number as the readings takes place for every 15 min
+readings_per_day_z1 &lt;- co2_zone1 |&gt; group_by(Date = date(TIMESTAMP)) %&gt;% summarize(Readings = n())
+readings_per_day_z2 &lt;- co2_zone2 |&gt; group_by(Date = date(TIMESTAMP)) %&gt;% summarize(Readings = n())
+
+##Missing date readings
+missing_day_z1 &lt;- readings_per_day_z1 |&gt; filter(Readings != 96)
+missing_day_z2 &lt;- readings_per_day_z2 |&gt; filter(Readings != 96)
+
+cat(&quot;Missing dates of zone-1&quot;)</code></pre>
+<pre><code>## Missing dates of zone-1</code></pre>
+<pre class="r"><code>print(missing_day_z1)</code></pre>
+<pre><code>## # A tibble: 1 × 2
+##   Date       Readings
+##   &lt;date&gt;        &lt;int&gt;
+## 1 2020-02-25       95</code></pre>
+<pre class="r"><code>cat(&quot;Missing dates of zone-2&quot;)</code></pre>
+<pre><code>## Missing dates of zone-2</code></pre>
+<pre class="r"><code>print(missing_day_z2)</code></pre>
+<pre><code>## # A tibble: 1 × 2
+##   Date       Readings
+##   &lt;date&gt;        &lt;int&gt;
+## 1 2020-02-25       95</code></pre>
 </div>
 <div id="zone-wise-co₂-concentration-analysis-2020" class="section level3">
 <h3>Zone-wise CO₂ Concentration Analysis (2020)</h3>
@@ -1560,6 +1678,47 @@ avg_co2_zone3 &lt;- co2_zone3 |&gt;
   filter(Year == 2020) |&gt;                                           
   summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|&gt;              
   pull(mean_co2)</code></pre>
+</div>
+<div id="counting-the-number-of-reading-for-zone-1-and-zone-3-of-carbondioxide-files." class="section level3">
+<h3>Counting the number of reading for zone-1 and zone-3 of
+carbondioxide files.</h3>
+</div>
+<div id="checking-if-each-day-has-96-readings-as-we-deal-with-co2_zone_3-values-and-have-inserted-a-row-as-there-is-a-missing-value-on-feb-25-at-930-because-of-some-technical-problems-and-it-was-restarted-later." class="section level3">
+<h3>Checking if each day has 96 readings as we deal with co2_zone_3
+values, and have inserted a row as there is a missing value on feb 25 at
+9:30 because of some technical problems and it was restarted later.</h3>
+<pre class="r"><code># Create new row for missing timestamp for the zone_1 carbondioxide
+missingrow_z1 &lt;- data.frame(ID = &quot;0000&quot;, 
+                          TIMESTAMP = as.POSIXct(&quot;2020-02-25 09:30:00&quot;),
+                          VALUE = avg_co2_zone1,
+                          TRENDFLAGS = 0,  
+                          STATUS = 0,
+                          TRENDFLAGS_TAG = &quot;{}&quot;,
+                          STATUS_TAG = &quot;{ok}&quot;
+  
+)
+
+# Insert into dataset and arranging the time stamp according to the time.
+co2_zone1 &lt;- co2_zone1 |&gt;
+  bind_rows(missingrow_z1) |&gt;
+  arrange(TIMESTAMP) 
+
+
+# Create new row for missing timestamp for the zone_2 carbondioxide
+missingrow_z2 &lt;- data.frame(ID = &quot;0000&quot;, 
+                          TIMESTAMP = as.POSIXct(&quot;2020-02-25 09:30:00&quot;),
+                          VALUE = avg_co2_zone2,
+                          TRENDFLAGS = 0,  
+                          STATUS = 0,
+                          TRENDFLAGS_TAG = &quot;{}&quot;,
+                          STATUS_TAG = &quot;{ok}&quot;
+  
+)
+
+# Insert into dataset and arranging the time stamp according to the time.
+co2_zone2 &lt;- co2_zone2 |&gt;
+  bind_rows(missingrow_z2) |&gt;
+  arrange(TIMESTAMP)</code></pre>
 </div>
 <div id="zone-wise-temperature-averaging-and-conversion-2020" class="section level3">
 <h3>Zone-wise Temperature Averaging and Conversion (2020)</h3>
@@ -1595,7 +1754,7 @@ zone2_moles &lt;- co2_moles(avg_co2_zone2,temp_zone2, vol_fracs[2])
 zone3_moles &lt;- co2_moles(avg_co2_zone3,temp_zone3, vol_fracs[3])
   
 print(paste(&quot;zone1 moles of co2:&quot;, zone1_moles, &quot;zone-2 moles of co2:&quot;, zone2_moles, &quot;zone-3 moles of co2:&quot;, zone3_moles))</code></pre>
-<pre><code>## [1] &quot;zone1 moles of co2: 125.267407783987 zone-2 moles of co2: 232.410003138939 zone-3 moles of co2: 43.8078338959014&quot;</code></pre>
+<pre><code>## [1] &quot;zone1 moles of co2: 125.448091658942 zone-2 moles of co2: 232.441088719022 zone-3 moles of co2: 43.782705788632&quot;</code></pre>
 </div>
 </div>
 <div id="calculating-daily-co2-moles-and-its-difference" class="section level3">
@@ -1651,6 +1810,7 @@ co2_z3 &lt;- co2_zone3 |&gt;
   summarize(carbondioxide_z3 = mean(VALUE, na.rm = TRUE)) 
 
 
+
 # Adding the carbondioxide value from co2_z1 dataframe to the zone1_data dataframe 
 zone1_data &lt;- zone1_data |&gt;
   left_join(co2_z1, by = &quot;Date&quot;) 
@@ -1664,9 +1824,8 @@ zone2_data &lt;- zone2_data |&gt;
 
 # Adding the carbondioxide value from co2_z1 dataframe to the zone1_data dataframe 
 zone3_data &lt;- zone3_data |&gt;
-  left_join(co2_z3, by = &quot;Date&quot;) 
-
-#Adding temp with 273K to convert it to kelvin
+  left_join(co2_z3, by = &quot;Date&quot;) </code></pre>
+<pre class="r"><code>#Adding temp with 273K to convert it to kelvin
 zone1_data$Zone_1_Temp_Avg &lt;- (zone1_data$Zone_1_Temp_Avg) + 273.15
 zone2_data$Zone_2_Temp_Avg &lt;- (zone2_data$Zone_2_Temp_Avg) + 273.15
 zone3_data$Zone_3_Temp_Avg &lt;- (zone3_data$Zone_3_Temp_Avg) + 273.15
@@ -1691,6 +1850,156 @@ zone3_data &lt;- zone3_data |&gt;
 zone1_data$Zone_1_CO2_Diff &lt;- c(NA, diff(zone1_data$moles))
 zone2_data$Zone_2_CO2_Diff &lt;- c(NA, diff(zone2_data$moles))
 zone3_data$Zone_3_CO2_Diff &lt;- c(NA, diff(zone3_data$moles))</code></pre>
+<pre class="r"><code>## Every 15 min no of moles and the difference between present and the next 15 min.
+zone1_minute_data &lt;- co2_zone1 |&gt; mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = &quot;%Y/%m/%d %H:%M:%S&quot;))|&gt; filter(year(TIMESTAMP) == 2020) 
+
+
+zone2_minute_data &lt;- co2_zone2 |&gt; mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = &quot;%Y/%m/%d %H:%M:%S&quot;))|&gt; filter(year(TIMESTAMP) == 2020) 
+
+zone3_minute_data &lt;- co2_zone3 |&gt; mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = &quot;%Y/%m/%d %H:%M:%S&quot;))|&gt; filter(year(TIMESTAMP) == 2020)</code></pre>
+<pre class="r"><code># Prepare Zone 1 temp and humidity
+zone1_temp_humid &lt;- s_temp_2020 %&gt;%
+  select(DateTime, T_S_100_Corr, T_S_300_Corr) %&gt;%
+  left_join(
+    ne_temp_2020 %&gt;%
+      select(DateTime, T_NE_100_Corr, T_NE_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    s_humid_2020 %&gt;%
+      select(DateTime, RH_S_100_Corr, RH_S_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_humid_2020 %&gt;%
+      select(DateTime, RH_NE_100_Corr, RH_NE_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  mutate(
+    TIMESTAMP = as.POSIXct(DateTime, format = &quot;%Y/%m/%d %H:%M&quot;),
+    # Compute average temp and RH 
+    Temp_Avg = rowMeans(select(., T_S_100_Corr, T_S_300_Corr, T_NE_100_Corr, T_NE_300_Corr), na.rm = TRUE),
+    RH_Avg = rowMeans(select(., RH_S_100_Corr, RH_S_300_Corr, RH_NE_100_Corr, RH_NE_300_Corr), na.rm = TRUE)
+  ) %&gt;%
+  select(TIMESTAMP, Temp_Avg, RH_Avg)
+# Prepare Zone 2 CO₂ minute data
+zone2_minute_data &lt;- co2_zone2 %&gt;%
+  mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = &quot;%Y/%m/%d %H:%M:%S&quot;)) %&gt;%
+  filter(year(TIMESTAMP) == 2020)</code></pre>
+<pre class="r"><code># Prepare Zone 2 temperature and humidity
+zone2_temp_humid &lt;- nw_temp_2020 %&gt;%
+  select(DateTime, T_NW_100_Corr, T_NW_300_Corr, T_NW_700_Corr) %&gt;%
+  left_join(
+    s_temp_2020 %&gt;% select(DateTime, T_S_700_Corr, T_S_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_temp_2020 %&gt;% select(DateTime, T_NE_700_Corr, T_NE_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    mtn_temp_2020 %&gt;% select(DateTime, T_MTN_100_Corr, T_MTN_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    nw_humid_2020 %&gt;% select(DateTime, RH_NW_100_Corr, RH_NW_300_Corr, RH_NW_700_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    s_humid_2020 %&gt;% select(DateTime, RH_S_700_Corr, RH_S_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_humid_2020 %&gt;% select(DateTime, RH_NE_700_Corr, RH_NE_1300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    mtn_humid_2020 %&gt;% select(DateTime, RH_MTN_100_Corr, RH_MTN_300_Corr),
+    by = &quot;DateTime&quot;
+  ) %&gt;%
+  mutate(
+    TIMESTAMP = as.POSIXct(DateTime, format = &quot;%Y/%m/%d %H:%M&quot;),
+    Temp_Avg = rowMeans(select(., starts_with(&quot;T_&quot;)), na.rm = TRUE),
+    RH_Avg = rowMeans(select(., starts_with(&quot;RH_&quot;)), na.rm = TRUE)
+  ) %&gt;%
+  select(TIMESTAMP, Temp_Avg, RH_Avg)</code></pre>
+<pre class="r"><code>zone3_temp_humid &lt;- ne_temp_2020 %&gt;% select(DateTime, T_NE_2000_Corr) %&gt;% 
+  left_join(
+    s_temp_2020 %&gt;% select(DateTime, T_S_2000_Corr), by = &quot;DateTime&quot;
+  )%&gt;%
+  left_join(
+    nw_temp_2020 %&gt;% select(DateTime, T_NW_1300_Corr), by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    mtn_temp_2020 %&gt;% select(DateTime, T_MTN_700_Corr, T_MTN_1300_Corr), by = &#39;DateTime&#39;
+  ) %&gt;%
+  left_join(
+    s_humid_2020 %&gt;% select(DateTime, RH_S_2000_Corr), by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    nw_humid_2020 %&gt;% select(DateTime, RH_NW_1300_Corr), by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    ne_humid_2020 %&gt;% select(DateTime, RH_NE_2000_Corr), by = &quot;DateTime&quot;
+  ) %&gt;%
+  left_join(
+    mtn_humid_2020 %&gt;% select(DateTime, RH_MTN_700_Corr, RH_MTN_1300_Corr), by = &quot;DateTime&quot;
+  ) %&gt;%
+  mutate(
+    TIMESTAMP = as.POSIXct(DateTime, format= &quot;%Y/%m/%d %H:%M&quot;),
+    Temp_Avg = rowMeans(select(.,starts_with(&quot;T_&quot;)), na.rm = TRUE),
+    Humid_Avg = rowMeans(select(., starts_with(&quot;RH_&quot;)), na.rm = TRUE)
+  ) %&gt;%
+  select(TIMESTAMP, Temp_Avg, Humid_Avg)</code></pre>
+<pre class="r"><code>zone1_minute_data &lt;- zone1_temp_humid %&gt;%
+  left_join(zone1_minute_data, by = &quot;TIMESTAMP&quot;)
+
+
+zone2_minute_data &lt;- zone2_temp_humid %&gt;%
+  left_join(zone2_minute_data, by = &quot;TIMESTAMP&quot;)
+
+zone3_minute_data &lt;- zone3_temp_humid %&gt;%
+  left_join(zone3_minute_data, by = &quot;TIMESTAMP&quot;)</code></pre>
+<pre class="r"><code>zone1_minute_data &lt;- zone1_minute_data |&gt; mutate(Temp_Avg = Temp_Avg + 273.15)
+zone2_minute_data &lt;- zone2_minute_data |&gt; mutate(Temp_Avg = Temp_Avg + 273.15)
+zone3_minute_data &lt;- zone3_minute_data |&gt; mutate(Temp_Avg = Temp_Avg + 273.15)</code></pre>
+<pre class="r"><code>zone1_minute_data &lt;- zone1_minute_data |&gt; mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[1]))
+
+zone2_minute_data &lt;- zone2_minute_data |&gt; mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[2]))
+
+zone3_minute_data &lt;- zone3_minute_data |&gt; mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[3]))</code></pre>
+</div>
+<div id="calculating-differences-for-each-zone" class="section level3">
+<h3>Calculating Differences for Each Zone</h3>
+<p>This code calculates the difference between consecutive moles values
+for each zone</p>
+<pre class="r"><code>zone1_minute_data$diff_moles &lt;- c(NA, diff(zone1_minute_data$moles)) 
+zone2_minute_data$diff_moles &lt;- c(NA, diff(zone2_minute_data$moles)) 
+zone3_minute_data$diff_moles &lt;- c(NA, diff(zone3_minute_data$moles)) </code></pre>
+</div>
+<div id="merging-data-from-all-three-zones" class="section level3">
+<h3>Merging Data from All Three Zones</h3>
+<p>This merged minute moles dataframe selects the relevant columns from
+each zone (timestamp and diff_moles), renames them for clarity, and
+merges them into one data frame. Finally, it calculates the total mole
+difference across all three zones for every 15 min in the year of 2020
+from Jan to Mar each day with 96 readings.</p>
+<pre class="r"><code># From all three zones selecting the time stamp and mole difference column
+zone1_min_sub &lt;- zone1_minute_data[, c(&quot;TIMESTAMP&quot;, &quot;diff_moles&quot;)]
+zone2_min_sub &lt;- zone2_minute_data[, c(&quot;TIMESTAMP&quot;, &quot;diff_moles&quot;)]
+zone3_min_sub &lt;- zone3_minute_data[, c(&quot;TIMESTAMP&quot;, &quot;diff_moles&quot;)]
+
+# Renaming the column for each zone&#39;s moles difference
+colnames(zone1_min_sub)[2] &lt;- &quot;diff_moles_z1&quot;
+colnames(zone2_min_sub)[2] &lt;- &quot;diff_moles_z2&quot;
+colnames(zone3_min_sub)[2] &lt;- &quot;diff_moles_z3&quot;
+
+# Merge all by timestamp
+merged_min_moles &lt;- Reduce(function(x, y) merge(x, y, by = &quot;TIMESTAMP&quot;, all = TRUE),
+                 list(zone1_min_sub, zone2_min_sub, zone3_min_sub))
+
+# Sum the differences across zones
+merged_min_moles$total_diff_moles &lt;- rowSums(merged_min_moles[, c(&quot;diff_moles_z1&quot;, &quot;diff_moles_z2&quot;, &quot;diff_moles_z3&quot;)], na.rm = TRUE)</code></pre>
 </div>
 </div>
 </div>

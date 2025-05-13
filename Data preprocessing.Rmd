@@ -896,7 +896,7 @@ head(ne_temp_2020)
 t_columns <- grep("T_NE", names(ne_temp_2020), value = TRUE)
 
 # Subset the data using the selected column names
-t_data <- ne_temperature_2020[, t_columns]
+t_data <- ne_temp_2020[, t_columns]
 
 # Calculate the mean of those columns
 ne_temp_mean <- colMeans(t_data)
@@ -1252,12 +1252,12 @@ zone1_data <- s_temp_2020 |>
     by = "DateTime"
   ) %>%
   left_join(
-    ne_temperature_2020 %>%
+    ne_temp_2020 %>%
       select(DateTime, T_NE_100_Corr, T_NE_300_Corr),
     by = "DateTime"
   ) %>%
   left_join(
-    ne_humidity_2020 %>%
+    ne_humid_2020 %>%
       select(DateTime, RH_NE_100_Corr, RH_NE_300_Corr),
     by = "DateTime"
   ) %>%
@@ -1430,7 +1430,7 @@ print(head(zone3_data))
 
 
 ```
-#Zone wise calculation of no of moles
+## Zone wise calculation of no of moles
 
 ```{r, mole calculation}
 
@@ -1735,7 +1735,7 @@ zone3_minute_data <- co2_zone3 |> mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, forma
 zone1_temp_humid <- s_temp_2020 %>%
   select(DateTime, T_S_100_Corr, T_S_300_Corr) %>%
   left_join(
-    ne_temperature_2020 %>%
+    ne_temp_2020 %>%
       select(DateTime, T_NE_100_Corr, T_NE_300_Corr),
     by = "DateTime"
   ) %>%
@@ -1823,7 +1823,7 @@ zone3_temp_humid <- ne_temp_2020 %>% select(DateTime, T_NE_2000_Corr) %>%
     nw_humid_2020 %>% select(DateTime, RH_NW_1300_Corr), by = "DateTime"
   ) %>%
   left_join(
-    ne_humidity_2020 %>% select(DateTime, RH_NE_2000_Corr), by = "DateTime"
+    ne_humid_2020 %>% select(DateTime, RH_NE_2000_Corr), by = "DateTime"
   ) %>%
   left_join(
     mtn_humid_2020 %>% select(DateTime, RH_MTN_700_Corr, RH_MTN_1300_Corr), by = "DateTime"
@@ -1869,4 +1869,40 @@ zone2_minute_data <- zone2_minute_data |> mutate(moles = co2_moles(VALUE, Temp_A
 zone3_minute_data <- zone3_minute_data |> mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[3]))
 ```
 
+
+### Calculating Differences for Each Zone
+This code calculates the difference between consecutive moles values for each zone
+```{r}
+zone1_minute_data$diff_moles <- c(NA, diff(zone1_minute_data$moles)) 
+zone2_minute_data$diff_moles <- c(NA, diff(zone2_minute_data$moles)) 
+zone3_minute_data$diff_moles <- c(NA, diff(zone3_minute_data$moles)) 
+```
+
+
+
+###  Merging Data from All Three Zones
+This merged minute moles dataframe selects the relevant columns from each zone (timestamp and diff_moles), renames them for clarity, and merges them into one data frame. Finally, it calculates the total mole difference across all three zones for every 15 min in the year of 2020 from Jan to Mar each day with 96 readings.
+
+```{r}
+
+# From all three zones selecting the time stamp and mole difference column
+zone1_min_sub <- zone1_minute_data[, c("TIMESTAMP", "diff_moles")]
+zone2_min_sub <- zone2_minute_data[, c("TIMESTAMP", "diff_moles")]
+zone3_min_sub <- zone3_minute_data[, c("TIMESTAMP", "diff_moles")]
+
+# Renaming the column for each zone's moles difference
+colnames(zone1_min_sub)[2] <- "diff_moles_z1"
+colnames(zone2_min_sub)[2] <- "diff_moles_z2"
+colnames(zone3_min_sub)[2] <- "diff_moles_z3"
+
+# Merge all by timestamp
+merged_min_moles <- Reduce(function(x, y) merge(x, y, by = "TIMESTAMP", all = TRUE),
+                 list(zone1_min_sub, zone2_min_sub, zone3_min_sub))
+
+# Sum the differences across zones
+merged_min_moles$total_diff_moles <- rowSums(merged_min_moles[, c("diff_moles_z1", "diff_moles_z2", "diff_moles_z3")], na.rm = TRUE)
+
+
+
+```
 

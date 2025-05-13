@@ -108,6 +108,55 @@ cat("Missing dates")
 print(missing_day)
 ```
 
+```{r}
+# Convert TIMESTAMP to a datetime format
+co2_zone3 <- co2_zone3 %>% mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S"))
+
+# Filter for the year 2019
+co2_zone3_2019 <- co2_zone3 %>% filter(year(TIMESTAMP) == 2019)
+
+# Count the number of readings per day (assuming 15-minute intervals)
+readings_per_day_z3_2019 <- co2_zone3_2019 |> 
+  group_by(Date = date(TIMESTAMP)) %>%
+  summarize(Readings = n())
+
+# Identify days with missing readings (not equal to 96 readings per day)
+missing_days_2019 <- readings_per_day_z3_2019 |> 
+  filter(Readings != 96)
+
+# Display missing dates
+cat("Missing dates in 2019 data:\n")
+print(missing_days_2019)
+```
+```{r}
+# Filter the original data to include only the missing dates
+missing_dates <- c("2019-09-21", "2019-09-23", "2019-09-24", "2019-09-25", 
+                   "2019-09-26", "2019-09-27", "2019-10-02", "2019-10-03", 
+                   "2019-10-04", "2019-10-05", "2019-10-06", "2019-10-07", 
+                   "2019-10-08", "2019-10-09", "2019-10-10", "2019-10-11", 
+                   "2019-11-25", "2019-12-13", "2019-12-24")
+
+# Extract data for the missing dates
+missing_readings <- co2_zone3_2019 %>%
+  filter(date(TIMESTAMP) %in% missing_dates)
+
+# Create an 'hour' column to easily group by hour
+missing_readings <- missing_readings %>%
+  mutate(hour = hour(TIMESTAMP), minute = minute(TIMESTAMP), Date = date(TIMESTAMP))
+
+# Count the number of readings per hour for each day
+readings_per_hour <- missing_readings %>%
+  group_by(Date, hour) %>%
+  summarize(ReadingsCount = n(), .groups = "drop")
+
+# Identify hours where there are fewer than 4 readings
+missing_hours <- readings_per_hour %>%
+  filter(ReadingsCount < 4)
+
+# Display missing hours with corresponding dates
+cat("Missing readings in the following hours (Date and Hour):\n")
+print(missing_hours)
+```
 ### Data Gap Identification and Imputation
 
 During the validation of 2020 CO₂ measurements from Zone 3, we identified an incomplete daily record on February 25th, containing only 95 observations instead of the expected 96 readings. The missing measurement corresponds specifically to the 09:30 timestamp. 
@@ -131,8 +180,15 @@ mean_value <- mean(co2_zone3$VALUE)
 print(mean_value)
 ```
 The mean value for the VALUE column is 428.1858.
+```{r}
+# Check class of VALUE column
+class(co2_zone3_2019$VALUE)
 
+# Calculate mean CO2 concentration for 2019 (excluding NAs if any)
+mean_value_2019 <- mean(co2_zone3_2019$VALUE, na.rm = TRUE)
+print(mean_value_2019)
 
+```
 ####  Missing Timestamp Handling
 
 Creates and inserts a replacement row for the missing 09:30 reading using annual mean CO₂ values. Flags imputed data while maintaining chronological order in the dataset. Ensures complete time-series for accurate trend analysis
@@ -156,6 +212,59 @@ co2_zone3 <- co2_zone3 |>
   arrange(TIMESTAMP) 
 ```
 
+```{r}
+# Assuming you already calculated mean_value_2019
+# Example: mean_value_2019 <- mean(co2_zone3$VALUE, na.rm = TRUE)
+
+# List of missing timestamps
+missing_times <- as.POSIXct(c(
+  "2019-09-21 18:00:00", "2019-09-21 18:15:00", "2019-09-23 00:45:00", "2019-09-23 01:00:00",
+  "2019-09-24 04:30:00", "2019-09-24 04:45:00", "2019-09-24 05:00:00", "2019-09-24 05:15:00",
+  "2019-09-24 05:30:00", "2019-09-24 05:45:00", "2019-09-24 13:00:00", "2019-09-24 13:15:00",
+  "2019-09-24 13:30:00", "2019-09-24 13:45:00", "2019-09-25 23:15:00", "2019-09-25 23:30:00",
+  "2019-09-25 23:45:00", "2019-09-26 00:00:00", "2019-09-26 00:15:00", "2019-09-26 00:30:00",
+  "2019-09-26 00:45:00", "2019-09-26 04:15:00", "2019-09-26 16:30:00", "2019-09-26 16:45:00",
+  "2019-09-26 17:00:00", "2019-09-26 17:15:00", "2019-09-26 17:30:00", "2019-09-27 04:15:00",
+  "2019-09-27 04:30:00", "2019-10-02 13:15:00", "2019-10-02 13:30:00", "2019-10-03 02:45:00",
+  "2019-10-03 12:00:00", "2019-10-03 23:30:00", "2019-10-04 10:45:00", "2019-10-04 11:00:00",
+  "2019-10-05 22:30:00", "2019-10-05 23:45:00", "2019-10-06 03:00:00", "2019-10-06 22:15:00",
+  "2019-10-06 22:30:00", "2019-10-07 15:45:00", "2019-10-07 17:00:00", "2019-10-07 19:15:00",
+  "2019-10-07 21:15:00", "2019-10-08 05:30:00", "2019-10-08 14:45:00", "2019-10-08 17:00:00",
+  "2019-10-08 17:15:00", "2019-10-08 23:30:00", "2019-10-09 01:45:00", "2019-10-09 13:00:00",
+  "2019-10-09 17:15:00", "2019-10-09 23:30:00", "2019-10-10 08:45:00", "2019-10-10 12:00:00",
+  "2019-10-10 16:15:00", "2019-10-10 18:30:00", "2019-10-11 11:15:00", "2019-10-11 11:30:00",
+  "2019-11-25 02:15:00", "2019-11-25 02:30:00", "2019-11-25 02:45:00", "2019-11-25 03:00:00",
+  "2019-11-25 03:15:00", "2019-11-25 03:30:00", "2019-11-25 03:45:00", "2019-11-25 04:00:00",
+  "2019-11-25 04:15:00", "2019-11-25 04:30:00", "2019-11-25 04:45:00", "2019-11-25 05:00:00",
+  "2019-11-25 05:15:00", "2019-11-25 05:30:00", "2019-11-25 05:45:00", "2019-11-25 06:00:00",
+  "2019-11-25 06:15:00", "2019-11-25 06:30:00", "2019-11-25 06:45:00", "2019-11-25 07:00:00",
+  "2019-11-25 07:15:00", "2019-11-25 07:30:00", "2019-11-25 07:45:00", "2019-11-25 08:00:00",
+  "2019-11-25 08:15:00", "2019-11-25 08:30:00", "2019-11-25 08:45:00", "2019-12-13 02:00:00",
+  "2019-12-24 03:30:00"
+))
+
+# Create the missing rows
+missing_rows <- data.frame(
+  ID = "0000",
+  TIMESTAMP = missing_times,
+  VALUE = mean_value_2019,
+  TRENDFLAGS = 0,
+  STATUS = 0,
+  TRENDFLAGS_TAG = "{}",
+  STATUS_TAG = "{ok}"
+)
+
+# Add them to the original dataset and sort
+library(dplyr)
+
+co2_zone3_2019_new <- co2_zone3_2019 %>%
+  bind_rows(missing_rows) %>%
+  arrange(TIMESTAMP)
+
+```
+
+
+
 #### Daily Aggregation & Visualization
 
 Calculates daily mean CO₂ concentrations from 15-minute interval data. Visualizes trends with a line plot (highlighting daily fluctuations) and reference lines. Provides quality control by revealing data patterns and anomalies
@@ -173,7 +282,16 @@ print(mean_value_per_day)
 
 ```
 
+```{r}
+# Group by day and calculate the mean value per day
+mean_value_per_day_2019 <- co2_zone3_2019_new |>
+  group_by(Date = date(TIMESTAMP)) |> 
+  summarize(Mean = mean(VALUE))
 
+# View the result
+print(mean_value_per_day_2019)
+
+```
 
 ### Visualizing Daily Carbondioxide Concentration Trends in 2020
 
@@ -210,6 +328,38 @@ ggplot(mean_value_per_day,
   ) 
 
 
+```
+
+```{r}
+# Plot
+ggplot(mean_value_per_day_2019, aes(x = Date, y = Mean)) +
+  geom_line(color = "#1f78b4", linewidth = 1.2) +
+  geom_point(color = "#e31a1c", size = 2.5) +
+  geom_hline(
+    yintercept = mean(mean_value_per_day_2019$Mean, na.rm = TRUE), 
+    linetype = "dashed", size = 1, color = "darkgreen"
+  ) +
+  labs(
+    title = "Daily Mean CO2 Values (2019)",
+    x = "Date",
+    y = "Mean CO2 Value",
+    caption = "Data source: Biosphere Rainforest Data"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.background = element_rect(fill = "white", color = "grey80", linewidth = 1),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_blank(),
+    axis.text = element_text(color = "black"),
+    axis.title = element_text(color = "black"),
+    plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+    plot.caption = element_text(size = 9, color = "gray50")
+  ) +
+  scale_y_continuous(
+    limits = c(min(mean_value_per_day_2019$Mean) * 0.98,
+               max(mean_value_per_day_2019$Mean) * 1.02),
+    expand = c(0, 0)
+  )
 ```
 #### Outlier Detection in carbondioxide Measurements
 
@@ -267,9 +417,87 @@ ggplot(co2_zone3,
     legend.text = element_text(size = 10)
     )
 
-``` 
+```
+
+```{r}
+ggplot(co2_zone3_2019_new, aes(x = TIMESTAMP, y = VALUE)) +
+  geom_point(aes(color = Is_Outlier, shape = Is_Outlier), size = 0.75, alpha = 0.7) +  # Keep the point size small in the plot
+  scale_color_manual(
+    values = c("FALSE" = "pink", "TRUE" = "#D62728"),
+    labels = c("Normal", "Outlier")
+  ) +
+  scale_shape_manual(
+    values = c("FALSE" = 16, "TRUE" = 17),
+    labels = c("Normal", "Outlier")
+  ) +
+  labs(
+    title = "KNN Outlier Detection on CO2 Data 2019",
+    x = "Timestamp",
+    y = "CO2 Value",
+    color = "Outliers",  # Change label in the legend
+    shape = "Outliers"   # Change label in the legend
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    axis.text = element_text(color = "black"),
+    axis.title = element_text(color = "black"),
+    legend.background = element_rect(fill = "white", color = "gray70"),
+    legend.position = "bottom",  # Move the legend to the bottom
+    legend.box.margin = margin(t = 10),
+    legend.text = element_text(size = 10),  # Increase legend text size
+    legend.title = element_blank(),  # Remove the "Point Type" label
+    legend.key.size = unit(1.5, "lines")  # Increase the size of the points in the legend
+  )
 
 
+
+```
+```{r}
+# Calculate the Q1, Q3, and IQR
+Q1 <- quantile(co2_zone3_2019_new$VALUE, 0.25)
+Q3 <- quantile(co2_zone3_2019_new$VALUE, 0.75)
+IQR_value <- Q3 - Q1
+
+# Define the outlier thresholds
+lower_bound <- Q1 - 1.5 * IQR_value
+upper_bound <- Q3 + 1.5 * IQR_value
+
+# Detect outliers
+co2_zone3_2019_new$Is_Outlier <- co2_zone3_2019_new$VALUE < lower_bound | co2_zone3_2019_new$VALUE > upper_bound
+
+# Visualize the data with outliers
+ggplot(co2_zone3_2019_new, aes(x = TIMESTAMP, y = VALUE)) +
+  geom_point(aes(color = Is_Outlier, shape = Is_Outlier), size = 0.75, alpha = 1.5) +
+  scale_color_manual(
+    values = c("FALSE" = "pink", "TRUE" = "#D62728"),
+    labels = c("Normal", "Outlier")
+  ) +
+  scale_shape_manual(
+    values = c("FALSE" = 16, "TRUE" = 17),
+    labels = c("Normal", "Outlier")
+  ) +
+  labs(
+    title = "Outliers Detection Using Quartile Method",
+    x = "Timestamp",
+    y = "CO2 Value",
+    color = "Outliers",  # Custom label in the legend
+    shape = "Outliers"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
+    axis.text = element_text(color = "black"),
+    axis.title = element_text(color = "black"),
+    legend.background = element_rect(fill = "white", color = "gray70"),
+    legend.position = "bottom",  # Move the legend to the bottom
+    legend.box.margin = margin(t = 10),
+    legend.text = element_text(size = 10),  # Increase legend text size
+    legend.title = element_blank(),  # Remove the "Outliers" label
+    legend.key.size = unit(1.5, "lines")  # Increase the size of the points in the legend
+  )
+
+```
 ### Relative Humidity for the North East Tower.
 
 ### Data Quality Summary: North East Tower Relative Humidity
@@ -341,6 +569,20 @@ cat("Missing dates")
 print(missing_day_humid)
 ```
 
+```{r}
+## Filtering out the '2019' data from humidity dataframe
+ne_humid_2019 <- ne_humidity |> filter(year(DateTime) == 2019)
+
+## Counting the number of readings that take place every 15 minutes
+readings_per_day_humid_2019 <- ne_humid_2019 |> group_by(Date = date(DateTime)) %>% summarize(Readings = n())
+
+## Missing date readings for 2019
+missing_day_humid_2019 <- readings_per_day_humid_2019 |> filter(Readings != 96)
+
+cat("Missing dates for 2019")
+print(missing_day_humid_2019)
+
+```
 
 
 #### Sensor Calibration: Relative Humidity Corrections for NorthEast Tower with Relative Humidity.
@@ -360,9 +602,23 @@ ne_humid_2020 <- ne_humid_2020 %>%
    )
 
 # View the updated dataframe
-head(ne_humidity_2020)
+head(ne_humid_2020)
 ```
 
+```{r}
+#Generating new columns for the humidity dataframe
+ne_humid_2019 <- ne_humid_2019 %>%
+  mutate(
+    RH_NE_100_Corr  = TRF_NETower_100_HMP45  * 1.038 + 1.0,
+    RH_NE_300_Corr  = TRF_NETower_300_HMP45  * 0.986 - 2.1,
+    RH_NE_700_Corr  = TRF_NETower_700_HMP45  * 1.055 - 6.8,
+     RH_NE_1300_Corr = TRF_NETower_1300_HMP45 * 0.9213 + 5.6,
+    RH_NE_2000_Corr = TRF_NETower_2000_HMP45 * 0.9889 + 3.0,
+   )
+
+# View the updated dataframe
+head(ne_humid_2019)
+```
 #### Performed the calculation as by taking the formula and it's the value for each column that is each sensor at particular heights.
 
 ```{r, ne_humidity_2020_mean}
@@ -382,6 +638,20 @@ print(ne_humid_mean)
 
 ```
 
+```{r}
+# Select columns starting with "RH"
+rh_columns_2019 <- grep("RH", names(ne_humid_2019), value = TRUE)
+
+# Subset the data using the selected column names
+rh_data_2019 <- ne_humid_2019[, rh_columns_2019]
+
+# Calculate the mean of those columns
+ne_humid_mean_2019 <- colMeans(rh_data_2019)
+
+# Print the result
+cat("Mean of the columns in the realtive humidity columns of the dataframe")
+print(ne_humid_mean_2019)
+```
 
 #Outliers for the North East Tower of Relative Humidity
 ```{r, outliers, warning= FALSE}
@@ -450,7 +720,76 @@ for (col in rh_columns){
   
 ```
   
+```{r}
+# Select columns starting with "RH"
+rh_columns_2019 <- grep("^RH", names(ne_humid_2019), value = TRUE)
+
+# Considering values of those columns
+humidity_rh_2019 <- ne_humid_2019[, rh_columns_2019]
+
+# Function to detect outliers using KNN
+detect_outliers <- function(data, k = 6, quantile_threshold = 0.95) {
   
+  # Compute KNN distances 
+  knn_dist <- knn.dist(as.matrix(data), k = k)
+  
+  # Calculate the 95th percentile of distances for each point
+  quantile_distances <- apply(knn_dist, 1, function(x) quantile(x, quantile_threshold))
+  
+  # Identify outliers as points where the distance exceeds the 95th percentile
+  outliers <- quantile_distances > quantile(quantile_distances, quantile_threshold)
+  
+  return(outliers)
+}
+
+# Initialize a list to store outlier results
+outlier_results <- list()
+
+# Detect outliers for each column
+for (col in rh_columns_2019) {
+  column_data <- humidity_rh_2019[[col]]
+  outliers <- detect_outliers(column_data)
+  outlier_results[[col]] <- outliers
+}
+
+# Improved Visualization
+for (col in rh_columns_2019) {
+  # Create a data frame for plotting
+  plot_data <- data.frame(
+    Index = 1:nrow(humidity_rh_2019),
+    Value = humidity_rh_2019[[col]],
+    Outlier = outlier_results[[col]]
+  )
+  
+  # Plot the data with outliers highlighted
+  p <- ggplot(plot_data, aes(x = Index, y = Value, color = Outlier)) +
+    geom_point(size = 0.75, alpha = 0.7) +  # Increased point size and adjusted alpha
+    scale_color_manual(values = c("TRUE" = "#D62728", "FALSE" = "#1F77B4"),  # Updated color scheme for better contrast
+                       labels = c("Outlier", "Normal")) +
+    labs(
+      title = paste("Outliers in", col),
+      subtitle = "KNN Distance-based Outlier Detection",
+      x = "Observation Index",
+      y = "Humidity Value",
+      color = "Outlier Status"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title = element_text(hjust = 0.5, face = "bold", size = 16),
+      plot.subtitle = element_text(hjust = 0.5, color = "gray40", size = 12),
+      axis.title = element_text(size = 14),
+      axis.text = element_text(color = "black"),
+      legend.position = "bottom",  # Move legend to bottom
+      legend.title = element_text(face = "bold"),
+      legend.background = element_rect(fill = "white", color = "gray70"),
+      legend.text = element_text(size = 12)
+    )
+  
+  print(p)
+}
+
+  
+```
 
 
 

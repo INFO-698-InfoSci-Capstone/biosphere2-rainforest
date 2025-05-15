@@ -1,6 +1,6 @@
 ---
 title: "Rain Forest Data"
-author: "Sai Laasya Gorantla"
+author: "Sai Laasya Gorantla and Monica Tejaswi Kommareddy"
 date: "2025-02-13"
 output: html_document
 ---
@@ -107,6 +107,11 @@ missing_day <- readings_per_day_z3 |> filter(Readings != 96)
 cat("Missing dates")
 print(missing_day)
 ```
+##Data Processing for CO₂ Calibration in Zone 3 (2020).
+
+-> We analyzed the completeness of CO₂ data for Zone 3 in 2019 by converting timestamps to datetime format, filtering for 2019 records, and counting the number of 15-minute readings per day. 
+-> Since a complete day should have 96 readings, we identified 20 days with fewer readings, indicating missing data. Most of these days had slight gaps (e.g., 94 or 95 readings), but a few showed substantial missing values (e.g., only 69 readings), particularly during late September to early October. 
+-> This analysis was crucial for ensuring data quality, as incomplete records could impact downstream calculations like mole differences and flux estimates.
 
 ```{r}
 # Convert TIMESTAMP to a datetime format
@@ -128,6 +133,10 @@ missing_days_2019 <- readings_per_day_z3_2019 |>
 cat("Missing dates in 2019 data:\n")
 print(missing_days_2019)
 ```
+
+-> This code refines the missing data analysis by identifying which hours within previously flagged dates had incomplete readings. 
+-> Since each hour should have 4 readings (one every 15 minutes), the code groups data by date and hour, counts readings, and flags hours with fewer than 4. 
+-> This makes it easier to pinpoint specific time gaps, avoiding the need to manually inspect entire days.
 ```{r}
 # Filter the original data to include only the missing dates
 missing_dates <- c("2019-09-21", "2019-09-23", "2019-09-24", "2019-09-25", 
@@ -211,12 +220,15 @@ co2_zone3 <- co2_zone3 |>
   bind_rows(missingrow) |>
   arrange(TIMESTAMP) 
 ```
-
+##2020.
+-> During the validation of 2019 CO₂ data from Zone 3, several days were found to have missing 15-minute readings and also the entries ranged between 13 and 17 minutes instead of the expected 15.
+-> To maintain a complete and consistent time series, we identified the exact missing timestamps and imputed them using the annual mean CO₂ value (444.04 ppm). -> These values were clearly flagged to distinguish them from actual sensor data. This approach preserved the dataset’s structure, minimized bias, and ensured transparency for further analysis.
 ```{r}
-# Assuming you already calculated mean_value_2019
-# Example: mean_value_2019 <- mean(co2_zone3$VALUE, na.rm = TRUE)
 
-# List of missing timestamps
+# mean CO2 value for 2019
+mean_value_2019 <- 444.0441
+
+# List of missing timestamps (already POSIXct)
 missing_times <- as.POSIXct(c(
   "2019-09-21 18:00:00", "2019-09-21 18:15:00", "2019-09-23 00:45:00", "2019-09-23 01:00:00",
   "2019-09-24 04:30:00", "2019-09-24 04:45:00", "2019-09-24 05:00:00", "2019-09-24 05:15:00",
@@ -243,25 +255,32 @@ missing_times <- as.POSIXct(c(
   "2019-12-24 03:30:00"
 ))
 
-# Create the missing rows
+# Create the missing rows with correct data types and lengths
 missing_rows <- data.frame(
-  ID = "0000",
+  ID = rep("0000", length(missing_times)),
   TIMESTAMP = missing_times,
-  VALUE = mean_value_2019,
-  TRENDFLAGS = 0,
-  STATUS = 0,
-  TRENDFLAGS_TAG = "{}",
-  STATUS_TAG = "{ok}"
+  VALUE = rep(mean_value_2019, length(missing_times)),
+  TRENDFLAGS = rep(as.integer(0), length(missing_times)),
+  STATUS = rep(as.integer(0), length(missing_times)),
+  TRENDFLAGS_TAG = rep(" { }", length(missing_times)),
+  STATUS_TAG = rep(" {ok}", length(missing_times)),
+  stringsAsFactors = FALSE
 )
 
-# Add them to the original dataset and sort
-library(dplyr)
-
+# Combine with original dataset and sort by TIMESTAMP
 co2_zone3_2019_new <- co2_zone3_2019 %>%
   bind_rows(missing_rows) %>%
   arrange(TIMESTAMP)
 
+# Check the first rows
+head(co2_zone3_2019_new)
+
+# check for duplicated timestamps
+#sum(duplicated(co2_zone3_2019_new$TIMESTAMP))
+
 ```
+
+
 
 
 
@@ -330,6 +349,7 @@ ggplot(mean_value_per_day,
 
 ```
 
+### Visualizing Daily Carbondioxide Concentration Trends in 2019
 ```{r}
 # Plot
 ggplot(mean_value_per_day_2019, aes(x = Date, y = Mean)) +
@@ -419,40 +439,28 @@ ggplot(co2_zone3,
 
 ```
 
+#outlier detection for 2019 uding KNN
 ```{r}
-ggplot(co2_zone3_2019_new, aes(x = TIMESTAMP, y = VALUE)) +
-  geom_point(aes(color = Is_Outlier, shape = Is_Outlier), size = 0.75, alpha = 0.7) +  # Keep the point size small in the plot
-  scale_color_manual(
-    values = c("FALSE" = "pink", "TRUE" = "#D62728"),
-    labels = c("Normal", "Outlier")
-  ) +
-  scale_shape_manual(
-    values = c("FALSE" = 16, "TRUE" = 17),
-    labels = c("Normal", "Outlier")
-  ) +
-  labs(
-    title = "KNN Outlier Detection on CO2 Data 2019",
-    x = "Timestamp",
-    y = "CO2 Value",
-    color = "Outliers",  # Change label in the legend
-    shape = "Outliers"   # Change label in the legend
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(
-    plot.title = element_text(face = "bold", size = 16, hjust = 0.5),
-    axis.text = element_text(color = "black"),
-    axis.title = element_text(color = "black"),
-    legend.background = element_rect(fill = "white", color = "gray70"),
-    legend.position = "bottom",  # Move the legend to the bottom
-    legend.box.margin = margin(t = 10),
-    legend.text = element_text(size = 10),  # Increase legend text size
-    legend.title = element_blank(),  # Remove the "Point Type" label
-    legend.key.size = unit(1.5, "lines")  # Increase the size of the points in the legend
-  )
+library(FNN)
+library(ggplot2)
+library(dplyr)
 
+data_knn <- as.matrix(co2_zone3_2019_new$VALUE)
+knn_dist <- kNNdist(data_knn, k = 6)
+threshold <- quantile(knn_dist, 0.95)
+co2_zone3_2019_new$Is_Outlier <- knn_dist > threshold
+
+ggplot(co2_zone3_2019_new, aes(TIMESTAMP, VALUE, color = Is_Outlier, shape = Is_Outlier)) +
+  geom_point(size = 0.75) +
+  scale_color_manual(values = c("FALSE" = "pink", "TRUE" = "red")) +
+  scale_shape_manual(values = c(16, 17)) +
+  labs(title = "KNN Outlier Detection on CO2 Data 2019", color = "Outlier", shape = "Outlier") +
+  theme_minimal()
 
 
 ```
+#Outlier detection using IQR Method.
+
 ```{r}
 # Calculate the Q1, Q3, and IQR
 Q1 <- quantile(co2_zone3_2019_new$VALUE, 0.25)
@@ -492,9 +500,9 @@ ggplot(co2_zone3_2019_new, aes(x = TIMESTAMP, y = VALUE)) +
     legend.background = element_rect(fill = "white", color = "gray70"),
     legend.position = "bottom",  # Move the legend to the bottom
     legend.box.margin = margin(t = 10),
-    legend.text = element_text(size = 10),  # Increase legend text size
-    legend.title = element_blank(),  # Remove the "Outliers" label
-    legend.key.size = unit(1.5, "lines")  # Increase the size of the points in the legend
+    legend.text = element_text(size = 10),  
+    legend.title = element_blank(),  
+    legend.key.size = unit(1.5, "lines") 
   )
 
 ```
@@ -570,17 +578,21 @@ print(missing_day_humid)
 ```
 
 ```{r}
-## Filtering out the '2019' data from humidity dataframe
+# Filter humidity data to include only records from 2019
 ne_humid_2019 <- ne_humidity |> filter(year(DateTime) == 2019)
 
-## Counting the number of readings that take place every 15 minutes
-readings_per_day_humid_2019 <- ne_humid_2019 |> group_by(Date = date(DateTime)) %>% summarize(Readings = n())
+# Count the number of 15-minute interval readings per day
+readings_per_day_humid_2019 <- ne_humid_2019 |> 
+  group_by(Date = date(DateTime)) |> 
+  summarize(Readings = n())
 
-## Missing date readings for 2019
-missing_day_humid_2019 <- readings_per_day_humid_2019 |> filter(Readings != 96)
+# Identify days in 2019 with missing or extra readings (not equal to 96)
+missing_day_humid_2019 <- readings_per_day_humid_2019 |> 
+  filter(Readings != 96)
 
-cat("Missing dates for 2019")
+cat("Dates with incomplete or irregular readings in 2019:\n")
 print(missing_day_humid_2019)
+
 
 ```
 
@@ -719,7 +731,7 @@ for (col in rh_columns){
 }
   
 ```
-  
+#for 2019 data
 ```{r}
 # Select columns starting with "RH"
 rh_columns_2019 <- grep("^RH", names(ne_humid_2019), value = TRUE)
@@ -863,7 +875,24 @@ missing_day_temp <- readings_per_day_temp |> filter(Readings != 96)
 cat("Missing dates on NE Temperature")
 print(missing_day_temp)
 ```
+#checking for null values in 2019 data across rows and columns
+```{r}
+## Filtering out the '2019' data from temperature dataframe
+ne_temp_2019 <- ne_temperature |> filter(year(DateTime) == 2019)
 
+## Counting the number of readings per day (15-min intervals → 96 per day)
+readings_per_day_temp_2019 <- ne_temp_2019 |>
+  group_by(Date = date(DateTime)) |>
+  summarize(Readings = n())
+
+## Identify days with missing readings
+missing_day_temp_2019 <- readings_per_day_temp_2019 |>
+  filter(Readings != 96)
+
+cat("Missing dates on NE Temperature (2019):\n")
+print(missing_day_temp_2019)
+
+```
 This clarifies that there is no missing data in the Readings column which means they have recorded every single value through the sensors. So there is no need to perform any mean value to it.
 
 #### Sensor Calibration: Temperature Corrections for NorthEast Tower with Relative Humidity.
@@ -888,6 +917,22 @@ ne_temp_2020 <- ne_temp_2020 %>%
 head(ne_temp_2020)
 ```
 
+```{r}
+
+#Generating new columns for the temperature dataframe
+
+ne_temp_2019 <- ne_temp_2019 %>%
+  mutate(
+    T_NE_100_Corr  = TRF_NETower_100_HMP45 * 1.032 - 0.58,
+    T_NE_300_Corr  = TRF_NETower_300_HMP45 * 0.9883 + 0.6049,
+    T_NE_700_Corr  = TRF_NETower_700_HMP45 * 1.045 - 0.88,
+    T_NE_1300_Corr = TRF_NETower_1300_HMP45 * 1.007  - 0.08,
+    T_NE_2000_Corr = TRF_NETower_2000_HMP45 * 0.9988 -0.39
+   )
+
+# View the updated dataframe
+head(ne_temp_2019)
+```
 #### Performed the calculation as by taking the formula and it's the value for each column that is each sensor at particular heights of North East tower of Temperature values.
 
 ```{r, average}
@@ -907,6 +952,20 @@ print(ne_temp_mean)
 
 ```
 
+```{r}
+# Select columns starting with "T_NE"
+temp_columns <- grep("T_NE", names(ne_temp_2019), value = TRUE)
+
+# Subset the data using the selected column names
+temp_data <- ne_temp_2019[, temp_columns]
+
+# Calculate the mean of those columns
+ne_temp_mean_2019 <- colMeans(temp_data)
+
+# Print the result
+cat("Mean of the columns in the temperature dataframe")
+print(ne_temp_mean_2019)
+```
 
 #Finally finding out the outliers of the NE-Temperature
 ```{r}
@@ -976,6 +1035,57 @@ for (col in temp_columns) {
 }
 ```
 
+```{r}
+# Extract 2019 Temperature Columns Starting with 'T_NE' 
+temp_vars_2019 <- grep("^T_NE", names(ne_temp_2019), value = TRUE)
+temp_data_2019 <- ne_temp_2019[temp_vars_2019]
+
+#  Custom Outlier Detection Function Using KNN 
+identify_knn_outliers <- function(vec) {
+  knn_result <- knn.dist(as.matrix(vec), k = 6)
+  local_quantile <- apply(knn_result, 1, function(row) quantile(row, 0.95))
+  threshold <- quantile(local_quantile, 0.95)
+  flagged <- local_quantile > threshold
+  return(flagged)
+}
+
+# Loop Through Columns and Store Outlier Flags 
+temp_outlier_flags <- lapply(temp_data_2019, identify_knn_outliers)
+names(temp_outlier_flags) <- temp_vars_2019
+
+#  Visualize Each Column with Outliers Highlighted 
+for (temp_col in temp_vars_2019) {
+  df_plot <- data.frame(
+    Record = seq_along(temp_data_2019[[temp_col]]),
+    Temp = temp_data_2019[[temp_col]],
+    Outlier = temp_outlier_flags[[temp_col]]
+  )
+  
+  plot_obj <- ggplot(df_plot, aes(x = Record, y = Temp)) +
+    geom_point(aes(color = Outlier), shape = 21, size = 0.75, stroke = 0.6) +
+    scale_color_manual(
+      values = c("FALSE" = "#1b9e77", "TRUE" = "#d95f02"),
+      labels = c("Normal", "Outlier")
+    ) +
+    labs(
+      title = paste("Temperature Outlier Detection -", temp_col, " (2019)"),
+      x = "Record Index",
+      y = "Temperature Reading",
+      color = "Category"
+    ) +
+    theme_light(base_size = 13) +
+    theme(
+      plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+      legend.position = "bottom",
+      legend.title = element_text(face = "bold"),
+      panel.grid.major = element_line(color = "#f0f0f0"),
+      panel.border = element_rect(color = "#aaaaaa", fill = NA)
+    )
+  
+  print(plot_obj)
+}
+
+```
 
 #Each day value according to the zone wise
 
@@ -1004,10 +1114,13 @@ s_humid <- s_humid[, 1:6]
 
 # Reassigning the column names as needed
 colnames(s_humid) <- c("DateTime", "TRF_STower_100_HMP45", "TRF_STower_300_HMP45","TRF_STower_700_HMP45","TRF_STower_1300_HMP45","TRF_SETower_2000_HMP45")
+```
+
+```{r}
 
 
 #Loading the file
-temperature2 <- read.csv('C:/Users/ual-laptop/Desktop/NE/S_Tower_Temperature.csv', skip = 4, header = FALSE)
+temperature2 <- read.csv('data/S_Tower_Temperature.csv', skip = 4, header = FALSE)
 
 #Copying the dataframe
 s_temp <- data.frame(temperature2)
@@ -1065,30 +1178,30 @@ colnames(nw_humid) <- c("DateTime", "TRF_NWTower_100_HMP45", "TRF_NWTower_300_HM
 ```{r, mountain tower}
 
 #loading the file
-temperature4 <- read.csv('C:/Users/ual-laptop/Desktop/NE/Mtn_Tower_Temperature.csv', skip = 4, header = FALSE)
+temperature4 <- read.csv('data/Mtn_Tower_Temperature.csv', skip = 4, header = FALSE)
 
-#Taking a copy of the file
+
 mtn_temp <- data.frame(temperature4)
 
 
 # Taking off the null column the V6 by selecting 6 columns only
 mtn_temp <- mtn_temp[, 1:5]
 
-# Reassigning the column names as needed
+# Reassigning the column names
 colnames(mtn_temp) <- c("DateTime", "TRF_MTNTower_100_HMP45", "TRF_MTNTower_300_HMP45","TRF_MTNTower_700_HMP45","TRF_MTNTower_1300_HMP45")
 
 
 #Loading the file
-humidity4 <- read.csv('C:/Users/ual-laptop/Desktop/NE/Mtn_Tower_Relative humidity.csv', skip = 4, header = FALSE )
+humidity4 <- read.csv('data/Mtn_Tower_Relative humidity.csv', skip = 4, header = FALSE )
 
 #Copying the dataframe
 mtn_humid <- data.frame(humidity4)
 
 
-# Taking off the null column the V6 by selecting 6 columns only
+# Taking off the null column 
 mtn_humid <- mtn_humid[, 1:5]
 
-# Reassigning the column names as needed
+# Reassigning the column names 
 colnames(mtn_humid) <- c("DateTime", "TRF_MTNTower_100_HMP45", "TRF_MTNTower_300_HMP45","TRF_MTNTower_700_HMP45","TRF_MTNTower_1300_HMP45")
 
 ```
@@ -1152,6 +1265,142 @@ s_humid_2020 <- process_data(s_humid, "Southern Humidity")
 s_temp_2020 <- process_data(s_temp, "Southern Temperature")
 
 ```
+
+#2019
+-> The function filters each dataset to include only data from 2019.
+
+-> It counts the number of 15-minute readings per day to check data completeness.
+
+-> It identifies and prints days where readings are missing or incomplete (not exactly 96 readings).
+
+-> The function returns that both NE humid and temp datasets for 2019 have some missing values which will be addressed lateron. 
+```{r}
+process_data <- function(tower, name) {
+  tower_2019 <- tower |> filter(year(DateTime) == 2019)
+  readings_per_day <- tower_2019 |> group_by(Date = date(DateTime)) |> summarize(Readings = n())
+  missing_days <- readings_per_day |> filter(Readings != 96)
+  
+  cat(paste("Missing dates on", name, "\n"))
+  print(missing_days)
+  
+  return(tower_2019)
+}
+
+# Applying the function to all datasets
+nw_humid_2019 <- process_data(nw_humid, "NW Humidity")
+nw_temp_2019 <- process_data(nw_temp, "NW Temperature")
+mtn_humid_2019 <- process_data(mtn_humid, "Mountain Humidity")
+mtn_temp_2019 <- process_data(mtn_temp, "Mountain Temperature")
+s_humid_2019 <- process_data(s_humid, "Southern Humidity")
+s_temp_2019 <- process_data(s_temp, "Southern Temperature")
+
+```
+#calculating the mean for imputing missing values. 
+```{r}
+# Define the target columns
+target_columns <- c("TRF_NWTower_100_HMP45", 
+                    "TRF_NWTower_300_HMP45", 
+                    "TRF_NWTower_700_HMP45", 
+                    "TRF_NWTower_1300_HMP45")
+
+# Calculate means for NW Humidity
+nw_humid_100 <- mean(nw_humid_2019$TRF_NWTower_100_HMP45, na.rm = TRUE)
+nw_humid_300 <- mean(nw_humid_2019$TRF_NWTower_300_HMP45, na.rm = TRUE)
+nw_humid_700 <- mean(nw_humid_2019$TRF_NWTower_700_HMP45, na.rm = TRUE)
+nw_humid_1300 <- mean(nw_humid_2019$TRF_NWTower_1300_HMP45, na.rm = TRUE)
+
+# Calculate means for NW Temperature
+nw_temp_100 <- mean(nw_temp_2019$TRF_NWTower_100_HMP45, na.rm = TRUE)
+nw_temp_300 <- mean(nw_temp_2019$TRF_NWTower_300_HMP45, na.rm = TRUE)
+nw_temp_700 <- mean(nw_temp_2019$TRF_NWTower_700_HMP45, na.rm = TRUE)
+nw_temp_1300 <- mean(nw_temp_2019$TRF_NWTower_1300_HMP45, na.rm = TRUE)
+
+```
+
+
+-> imputation is done for both humidity and temprature 
+
+```{r}
+# Convert DateTime column to POSIXct
+nw_humid_2019$DateTime <- as.POSIXct(nw_humid_2019$DateTime, format = "%Y/%m/%d %H:%M")
+# List of missing timestamps
+missing_timestamps <- as.POSIXct(c(
+  "2019/09/03 16:15", "2019/09/03 16:30", "2019/09/03 16:45", "2019/09/03 17:00",
+  "2019/09/03 17:15", "2019/09/03 17:30", "2019/09/03 17:45", "2019/09/03 18:00",
+  "2019/09/03 18:15", "2019/09/03 18:30", "2019/09/03 18:45", "2019/09/03 19:00",
+  "2019/09/03 19:15", "2019/09/03 19:30", "2019/09/03 19:45", "2019/09/06 11:15",
+  "2019/09/06 11:30", "2019/09/06 11:45", "2019/09/15 02:45", "2019/09/15 03:00",
+  "2019/09/15 03:15", "2019/09/15 03:30", "2019/09/15 03:45", "2019/09/15 04:00",
+  "2019/09/16 09:15", "2019/09/16 09:30", "2019/09/16 09:45", "2019/09/16 10:00",
+  "2019/09/16 10:15", "2019/09/16 10:30", "2019/09/16 10:45", "2019/09/16 11:00",
+  "2019/09/16 11:15", "2019/09/16 11:30", "2019/09/16 11:45", "2019/09/16 12:00",
+  "2019/09/16 12:15", "2019/09/16 12:30", "2019/09/16 12:45", "2019/10/13 22:15"
+))
+
+# Create the missing rows
+missing_rows <- data.frame(
+  DateTime = missing_timestamps,
+  TRF_NWTower_100_HMP45 = nw_humid_100,
+  TRF_NWTower_300_HMP45 = nw_humid_300,
+  TRF_NWTower_700_HMP45 = nw_humid_700,
+  TRF_NWTower_1300_HMP45 = nw_humid_1300
+)
+
+# Add them to the original dataset and sort
+
+
+nw_humid_2019_new <- nw_humid_2019 %>%
+  bind_rows(missing_rows) %>%
+  arrange(DateTime)
+
+print(nw_humid_2019_new)
+```
+
+
+```{r}
+# Convert DateTime column to POSIXct
+nw_temp_2019$DateTime <- as.POSIXct(nw_temp_2019$DateTime, format = "%Y/%m/%d %H:%M")
+
+# Define the list of missing timestamps
+missing_timestamps <- as.POSIXct(c(
+  "2019/09/03 16:15", "2019/09/03 16:30", "2019/09/03 16:45", "2019/09/03 17:00",
+  "2019/09/03 17:15", "2019/09/03 17:30", "2019/09/03 17:45", "2019/09/03 18:00",
+  "2019/09/03 18:15", "2019/09/03 18:30", "2019/09/03 18:45", "2019/09/03 19:00",
+  "2019/09/03 19:15", "2019/09/03 19:30", "2019/09/03 19:45", "2019/09/06 11:15",
+  "2019/09/06 11:30", "2019/09/06 11:45", "2019/09/15 02:45", "2019/09/15 03:00",
+  "2019/09/15 03:15", "2019/09/15 03:30", "2019/09/15 03:45", "2019/09/15 04:00",
+  "2019/09/16 09:15", "2019/09/16 09:30", "2019/09/16 09:45", "2019/09/16 10:00",
+  "2019/09/16 10:15", "2019/09/16 10:30", "2019/09/16 10:45", "2019/09/16 11:00",
+  "2019/09/16 11:15", "2019/09/16 11:30", "2019/09/16 11:45", "2019/09/16 12:00",
+  "2019/09/16 12:15", "2019/09/16 12:30", "2019/09/16 12:45", "2019/10/13 22:15"
+))
+
+# Replace these with the actual mean values from your temp dataset
+nw_temp_100  <- mean(nw_temp_2019$TRF_NWTower_100_HMP45, na.rm = TRUE)
+nw_temp_300  <- mean(nw_temp_2019$TRF_NWTower_300_HMP45, na.rm = TRUE)
+nw_temp_700  <- mean(nw_temp_2019$TRF_NWTower_700_HMP45, na.rm = TRUE)
+nw_temp_1300 <- mean(nw_temp_2019$TRF_NWTower_1300_HMP45, na.rm = TRUE)
+
+# Create the missing rows with those mean values
+missing_rows_temp <- data.frame(
+  DateTime = missing_timestamps,
+  TRF_NWTower_100_HMP45  = nw_temp_100,
+  TRF_NWTower_300_HMP45  = nw_temp_300,
+  TRF_NWTower_700_HMP45  = nw_temp_700,
+  TRF_NWTower_1300_HMP45 = nw_temp_1300
+)
+
+#  Combine and sort the dataset
+
+
+nw_temp_2019_new <- nw_temp_2019 %>%
+  bind_rows(missing_rows_temp) %>%
+  arrange(DateTime)
+
+print(nw_temp_2019_new)
+```
+
+
 ### Calibrations of temperature and relative humidity sensors for the South Tower, North West Tower, and Mountain Tower.
 
 
@@ -1169,6 +1418,27 @@ mtn_temp_2020 <- mtn_temp_2020 %>%
 
 # Relative Humidity: Corrected raw values with standardized transformation equation
 mtn_humid_2020 <- mtn_humid_2020 %>%
+  mutate(
+    RH_MTN_100_Corr  = TRF_MTNTower_100_HMP45,
+    RH_MTN_300_Corr  = TRF_MTNTower_300_HMP45 * 0.8975 + 12.2,
+    RH_MTN_700_Corr  = TRF_MTNTower_700_HMP45 * 0.863 + 16.2,
+    RH_MTN_1300_Corr = TRF_MTNTower_1300_HMP45 * 1.008 + 1.1
+  )
+
+```
+
+```{r}
+#Temperature: Applied elevation-specific correction formulas to raw sensor data
+mtn_temp_2019 <- mtn_temp_2019 %>%
+  mutate(
+    T_MTN_100_Corr  = TRF_MTNTower_100_HMP45,
+    T_MTN_300_Corr  = TRF_MTNTower_300_HMP45 * 0.9383 + 1.67,
+    T_MTN_700_Corr  = TRF_MTNTower_700_HMP45 * 1.129 - 2.4,
+    T_MTN_1300_Corr = TRF_MTNTower_1300_HMP45 * 1.004 - 0.02
+  )
+
+# Relative Humidity: Corrected raw values with standardized transformation equation
+mtn_humid_2019 <- mtn_humid_2019 %>%
   mutate(
     RH_MTN_100_Corr  = TRF_MTNTower_100_HMP45,
     RH_MTN_300_Corr  = TRF_MTNTower_300_HMP45 * 0.8975 + 12.2,
@@ -1203,6 +1473,25 @@ nw_humid_2020 <- nw_humid_2020 %>%
 
 ```
 
+```{r}
+#Temperature: Applied elevation-specific correction formulas to raw sensor data
+nw_temp_2019_new <- nw_temp_2019_new %>%
+  mutate(
+    T_NW_100_Corr  = TRF_NWTower_100_HMP45 * 0.9922 + 0.6,
+    T_NW_300_Corr  = TRF_NWTower_300_HMP45 * 1.005 - 0.17,
+    T_NW_700_Corr  = TRF_NWTower_700_HMP45 * 1.007 - 0.14,
+    T_NW_1300_Corr = TRF_NWTower_1300_HMP45 * 0.9801 + 0.54
+  )
+
+#Relative Humidity: Corrected raw values with standardized transformation equation
+nw_humid_2019_new <- nw_humid_2019_new %>%
+  mutate(
+    RH_NW_100_Corr  = TRF_NWTower_100_HMP45 * 0.9756 - 1.2,
+    RH_NW_300_Corr  = TRF_NWTower_300_HMP45 * 0.9882 - 1.6,
+    RH_NW_700_Corr  = TRF_NWTower_700_HMP45 * 0.9895 + 1.1,
+    RH_NW_1300_Corr = TRF_NWTower_1300_HMP45 * 1.012 + 1.334
+  )
+```
 
 
 #### Conducting temperature and relative humidity sensor calibrations for the South Tower.
@@ -1220,6 +1509,29 @@ s_temp_2020 <- s_temp_2020 %>%
 
 #Relative Humidity: Corrected raw values with standardized transformation equation
 s_humid_2020 <- s_humid_2020 %>%
+  mutate(
+    RH_S_100_Corr  = TRF_STower_100_HMP45 * 0.996 + 0.1,
+    RH_S_300_Corr  = TRF_STower_300_HMP45 * 1.04 - 2.4,
+    RH_S_700_Corr  = TRF_STower_700_HMP45 * 1.053 + 1.1,
+    RH_S_1300_Corr = TRF_STower_1300_HMP45 * 0.9499 + 7.4,
+    RH_S_2000_Corr = TRF_SETower_2000_HMP45  # No calibration needed
+  )
+
+```
+
+```{r}
+#Temperature: Applied elevation-specific correction formulas to raw sensor data
+s_temp_2019 <- s_temp_2019 %>%
+  mutate(
+    T_S_100_Corr  = TRF_STower_100_HMP45 * 1.041 + 0.08,
+    T_S_300_Corr  = TRF_STower_300_HMP45 * 1.026 - 0.04,
+    T_S_700_Corr  = TRF_STower_700_HMP45 * 1.037 - 0.15,
+    T_S_1300_Corr = TRF_STower_1300_HMP45 * 1.059 - 0.31,
+    T_S_2000_Corr = TRF_SETower_2000_HMP45  # No calibration needed
+  )
+
+#Relative Humidity: Corrected raw values with standardized transformation equation
+s_humid_2019 <- s_humid_2019 %>%
   mutate(
     RH_S_100_Corr  = TRF_STower_100_HMP45 * 0.996 + 0.1,
     RH_S_300_Corr  = TRF_STower_300_HMP45 * 1.04 - 2.4,
@@ -1277,6 +1589,40 @@ print(head(zone1_data))
 
 ```
 
+
+```{r}
+# Combine temperature and humidity data from Southern and NE sensors for 2019 by DateTime
+zone1_data_2019 <- s_temp_2019 |>
+  select(DateTime, T_S_100_Corr, T_S_300_Corr) %>%
+  left_join(
+    s_humid_2019 %>%
+      select(DateTime, RH_S_100_Corr, RH_S_300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    ne_temp_2019 %>%
+      select(DateTime, T_NE_100_Corr, T_NE_300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    ne_humid_2019 %>%
+      select(DateTime, RH_NE_100_Corr, RH_NE_300_Corr),
+    by = "DateTime"
+  ) %>%
+  mutate(Date = as.Date(DateTime)) %>%
+  group_by(Date) %>%
+  summarize(
+    Zone_1_Temp_Avg = mean(c(T_S_100_Corr, T_S_300_Corr, T_NE_100_Corr, T_NE_300_Corr), na.rm = TRUE),
+    Zone_1_RH_Avg = mean(c(RH_S_100_Corr, RH_S_300_Corr, RH_NE_100_Corr, RH_NE_300_Corr), na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# View result
+print("Zone 1 Data (2019):")
+print(head(zone1_data_2019))
+
+
+```
 
 ### Zone-2
 
@@ -1354,6 +1700,77 @@ print(head(zone2_data))
 
 
 ```
+
+```{r}
+
+# Convert DateTime columns to character for proper joining
+nw_temp_2019_new$DateTime <- as.character(nw_temp_2019_new$DateTime)
+nw_humid_2019_new$DateTime <- as.character(nw_humid_2019_new$DateTime)
+
+# Combine temperature and humidity data from multiple sensors for 2019 by DateTime
+zone2_data_2019 <- nw_temp_2019_new %>%
+  select(DateTime, T_NW_100_Corr, T_NW_300_Corr, T_NW_700_Corr) %>%
+  left_join(
+    s_temp_2019 %>%
+      select(DateTime, T_S_700_Corr, T_S_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    ne_temp_2019 %>%
+      select(DateTime, T_NE_700_Corr, T_NE_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    mtn_temp_2019 %>%
+      select(DateTime, T_MTN_100_Corr, T_MTN_300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    nw_humid_2019_new %>%
+      select(DateTime, RH_NW_100_Corr, RH_NW_300_Corr, RH_NW_700_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    s_humid_2019 %>%
+      select(DateTime, RH_S_700_Corr, RH_S_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    ne_humid_2019 %>%
+      select(DateTime, RH_NE_700_Corr, RH_NE_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    mtn_humid_2019 %>%
+      select(DateTime, RH_MTN_100_Corr, RH_MTN_300_Corr),
+    by = "DateTime"
+  ) %>%
+  mutate(Date = as.Date(DateTime)) %>%
+  group_by(Date) %>%
+  summarize(
+    Zone_2_Temp_Avg = mean(c(
+      T_NW_100_Corr, T_NW_300_Corr, T_NW_700_Corr,
+      T_S_700_Corr, T_S_1300_Corr,
+      T_NE_700_Corr, T_NE_1300_Corr,
+      T_MTN_100_Corr, T_MTN_300_Corr
+    ), na.rm = TRUE),
+    
+    Zone_2_RH_Avg = mean(c(
+      RH_NW_100_Corr, RH_NW_300_Corr, RH_NW_700_Corr,
+      RH_S_700_Corr, RH_S_1300_Corr,
+      RH_NE_700_Corr, RH_NE_1300_Corr,
+      RH_MTN_100_Corr, RH_MTN_300_Corr
+    ), na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# View result
+print("Zone 2 Data (2019):")
+print(head(zone2_data_2019))
+
+```
+
+
 ### Zone - 3
 
 Calculates daily mean temperature and relative humidity for Zone 3 (13m-29m elevation) by combining calibrated South Tower NW Tower and NE sensor data. Outputs preview of aggregated daily values showing:
@@ -1430,6 +1847,76 @@ print(head(zone3_data))
 
 
 ```
+
+
+```{r}
+# Convert DateTime columns to character
+nw_temp_2019_new$DateTime <- as.character(nw_temp_2019_new$DateTime)
+nw_humid_2019_new$DateTime <- as.character(nw_humid_2019_new$DateTime)
+
+# Combine temperature and humidity data from multiple sensors for 2019 by DateTime
+zone3_data_2019 <- s_temp_2019 %>%
+  select(DateTime, T_S_2000_Corr) %>%
+  left_join(
+    nw_temp_2019_new %>%
+      select(DateTime, T_NW_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    mtn_temp_2019 %>%
+      select(DateTime, T_MTN_700_Corr, T_MTN_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    ne_temp_2019 %>%
+      select(DateTime, T_NE_2000_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    s_humid_2019 %>%
+      select(DateTime, RH_S_2000_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    nw_humid_2019_new %>%
+      select(DateTime, RH_NW_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    mtn_humid_2019 %>%
+      select(DateTime, RH_MTN_700_Corr, RH_MTN_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    ne_humid_2019 %>%
+      select(DateTime, RH_NE_2000_Corr),
+    by = "DateTime"
+  ) %>%
+  mutate(Date = as.Date(DateTime, format = "%Y/%m/%d %H:%M")) %>%
+  group_by(Date) %>%
+  summarize(
+    Zone_3_Temp_Avg = mean(c(
+      T_S_2000_Corr,
+      T_NW_1300_Corr,
+      T_MTN_700_Corr, T_MTN_1300_Corr,
+      T_NE_2000_Corr
+    ), na.rm = TRUE),
+    
+    Zone_3_RH_Avg = mean(c(
+      RH_S_2000_Corr,
+      RH_NW_1300_Corr,
+      RH_MTN_700_Corr, RH_MTN_1300_Corr,
+      RH_NE_2000_Corr
+    ), na.rm = TRUE),
+    
+    .groups = "drop"
+  )
+
+# View result
+print("Zone 3 Data:")
+print(head(zone3_data_2019))
+```
+
 ## Zone wise calculation of no of moles
 
 ```{r, mole calculation}
@@ -1475,6 +1962,8 @@ colSums(is.na(co2_zone2))
 
 
 ```
+
+
 ```{r}
 
 # Convert TIMESTAMP to a datetime format
@@ -1500,8 +1989,89 @@ print(missing_day_z2)
 
 
 ```
+filtering out for 2019 and finding the missing values
+```{r}
+# Convert TIMESTAMP to datetime and filter for 2019
+co2_zone1_2019 <- co2_zone1 %>%
+  mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S")) %>%
+  filter(year(TIMESTAMP) == 2019)
+
+co2_zone2_2019 <- co2_zone2 %>%
+  mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S")) %>%
+  filter(year(TIMESTAMP) == 2019)
+
+# Count readings per day (should be 96 for 15-minute intervals)
+readings_per_day_z1_2019 <- co2_zone1_2019 %>%
+  group_by(Date = date(TIMESTAMP)) %>%
+  summarize(Readings = n(), .groups = "drop")
+
+readings_per_day_z2_2019 <- co2_zone2_2019 %>%
+  group_by(Date = date(TIMESTAMP)) %>%
+  summarize(Readings = n(), .groups = "drop")
+
+# Identify days with missing readings
+missing_day_z1_2019 <- readings_per_day_z1_2019 %>% filter(Readings != 96)
+missing_day_z2_2019 <- readings_per_day_z2_2019 %>% filter(Readings != 96)
+
+# Print results
+cat("Missing dates of zone-1 (2019):\n")
+print(missing_day_z1_2019)
+
+cat("Missing dates of zone-2 (2019):\n")
+print(missing_day_z2_2019)
+```
+
+found no missing values in missing_day_z1_2019 but missing_day_z2_2019 had some. Handling missing values with the mean value sand not interpolation because some of them had continous missing values and also on a large scale. 
+```{r}
+# List of missing timestamps for Zone 2, 2019
+missing_times <- as.POSIXct(c(
+  "2019-09-21 18:00:00", "2019-09-21 18:15:00", "2019-09-23 00:45:00", "2019-09-23 01:00:00",
+  "2019-09-24 04:30:00", "2019-09-24 04:45:00", "2019-09-24 05:00:00", "2019-09-24 05:15:00",
+  "2019-09-24 05:30:00", "2019-09-24 05:45:00", "2019-09-24 13:00:00", "2019-09-24 13:15:00",
+  "2019-09-24 13:30:00", "2019-09-24 13:45:00", "2019-09-25 23:15:00", "2019-09-25 23:30:00",
+  "2019-09-25 23:45:00", "2019-09-26 00:00:00", "2019-09-26 00:15:00", "2019-09-26 00:30:00",
+  "2019-09-26 00:45:00", "2019-09-26 04:15:00", "2019-09-26 16:30:00", "2019-09-26 16:45:00",
+  "2019-09-26 17:00:00", "2019-09-26 17:15:00", "2019-09-26 17:30:00", "2019-09-27 04:15:00",
+  "2019-09-27 04:30:00", "2019-10-02 13:15:00", "2019-10-02 13:30:00", "2019-10-03 02:45:00",
+  "2019-10-03 12:00:00", "2019-10-03 23:30:00", "2019-10-04 10:45:00", "2019-10-04 11:00:00",
+  "2019-10-05 22:30:00", "2019-10-05 23:45:00", "2019-10-06 03:00:00", "2019-10-06 22:15:00",
+  "2019-10-06 22:30:00", "2019-10-07 15:45:00", "2019-10-07 17:00:00", "2019-10-07 19:15:00",
+  "2019-10-07 21:15:00", "2019-10-09 01:45:00", "2019-10-09 13:00:00", "2019-10-09 17:15:00",
+  "2019-10-09 23:30:00", "2019-10-10 08:45:00", "2019-10-10 12:00:00", "2019-10-10 16:15:00",
+  "2019-10-10 18:30:00", "2019-10-11 11:15:00", "2019-10-11 11:30:00", "2019-11-25 02:15:00",
+  "2019-11-25 02:30:00", "2019-11-25 02:45:00", "2019-11-25 03:00:00", "2019-11-25 03:15:00",
+  "2019-11-25 03:30:00", "2019-11-25 03:45:00", "2019-11-25 04:00:00", "2019-11-25 04:15:00",
+  "2019-11-25 04:30:00", "2019-11-25 04:45:00", "2019-11-25 05:00:00", "2019-11-25 05:15:00",
+  "2019-11-25 05:30:00", "2019-11-25 05:45:00", "2019-11-25 06:00:00", "2019-11-25 06:15:00",
+  "2019-11-25 06:30:00", "2019-11-25 06:45:00", "2019-11-25 07:00:00", "2019-11-25 07:15:00",
+  "2019-11-25 07:30:00", "2019-11-25 07:45:00", "2019-11-25 08:00:00", "2019-11-25 08:15:00",
+  "2019-11-25 08:30:00", "2019-11-25 08:45:00", "2019-12-13 02:00:00", "2019-12-24 03:30:00"
+))
+
+# Compute the mean value from the original dataset (excluding NA if any)
+mean_value_2019 <- mean(co2_zone2_2019$VALUE, na.rm = TRUE)
+
+# Create the missing rows using the mean
+missing_rows <- data.frame(
+  ID = "0000",
+  TIMESTAMP = missing_times,
+  VALUE = mean_value_2019,
+  TRENDFLAGS = 0,
+  STATUS = 0,
+  TRENDFLAGS_TAG = "{}",
+  STATUS_TAG = "{ok}"
+)
+
+# Add them to the original dataset and sort
+library(dplyr)
+
+co2_zone2_2019_new <- co2_zone2_2019 %>%
+  bind_rows(missing_rows) %>%
+  arrange(TIMESTAMP)
+head(co2_zone2_2019_new)
 
 
+```
 
 
 
@@ -1533,6 +2103,33 @@ avg_co2_zone3 <- co2_zone3 |>
   mutate(Date = as.Date(TIMESTAMP),
          Year = year(Date)) |>
   filter(Year == 2020) |>                                           
+  summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|>              
+  pull(mean_co2)
+
+```
+Avg CO2 concentration across zone wise 
+```{r}
+# Calculate the daily average carbondioxide concentration for Zone 1 
+avg_co2_zone1_2019 <- co2_zone1 |>
+  mutate(Date = as.Date(TIMESTAMP),
+         Year = year(Date)) |>
+  filter(Year == 2019) |>                                           
+  summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|>              
+  pull(mean_co2) 
+
+# Calculate the daily average carbondioxide concentration for Zone 2 
+avg_co2_zone2_2019 <- co2_zone2_2019_new |>
+  mutate(Date = as.Date(TIMESTAMP),
+         Year = year(Date)) |>
+  filter(Year == 2019) |>                                           
+  summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|>              
+  pull(mean_co2)
+
+# Calculate the daily average Carbondioxide concentration for Zone 3 
+avg_co2_zone3_2019 <- co2_zone3_2019_new |>
+  mutate(Date = as.Date(TIMESTAMP),
+         Year = year(Date)) |>
+  filter(Year == 2019) |>                                           
   summarize(mean_co2 = mean(VALUE, na.rm = TRUE))|>              
   pull(mean_co2)
 
@@ -1596,6 +2193,13 @@ temp_zone3 <- mean(zone3_data$Zone_3_Temp_Avg) + 273.15
 
 ```
 
+```{r}
+#Averaging the temperature zonewise - 2020 and converting from celsius to kelvin by adding 273.15
+
+temp_zone1_2019 <- mean(zone1_data_2019$Zone_1_Temp_Avg) + 273.15
+temp_zone2_2019 <- mean(zone2_data_2019$Zone_2_Temp_Avg) + 273.15
+temp_zone3_2019 <- mean(zone3_data_2019$Zone_3_Temp_Avg) + 273.15
+```
 
 #Calculating carbondioxide moles per zone
 
@@ -1624,11 +2228,36 @@ zone3_moles <- co2_moles(avg_co2_zone3,temp_zone3, vol_fracs[3])
   
 print(paste("zone1 moles of co2:", zone1_moles, "zone-2 moles of co2:", zone2_moles, "zone-3 moles of co2:", zone3_moles))
 ```
+#2019 data
+```{r}
+# Constants
+P <- 88400  
+V <- 26700    
+R <- 8.31446   
+vol_fracs <- c(0.304, 0.588, 0.108)  
+
+# Function to compute CO2 moles for a zone
+co2_moles <- function(avg_co2_ppm, temp_k, vol_frac) {
+  n_air <- (P * V) / (R * temp_k)         
+  n_co2 <- n_air * (avg_co2_ppm / 1e6) * vol_frac
+  return(n_co2)
+}
+
+# Add daily CO2 moles to each zone's data for 2019
+zone1_moles_2019 <- co2_moles(avg_co2_zone1_2019, temp_zone1_2019, vol_fracs[1])
+zone2_moles_2019 <- co2_moles(avg_co2_zone2_2019, temp_zone2_2019, vol_fracs[2])
+zone3_moles_2019 <- co2_moles(avg_co2_zone3_2019, temp_zone3_2019, vol_fracs[3])
+
+print(paste("zone1 moles of co2:", zone1_moles_2019, 
+            "zone-2 moles of co2:", zone2_moles_2019, 
+            "zone-3 moles of co2:", zone3_moles_2019))
+
+```
 
 
 ### Calculating daily co2 moles and it's difference
 
-To analyze daily carbondioxide dynamics across the rainforest zones, we first process the raw sensor data to calculate daily average CO₂ concentrations for each vertical zone (1m, 13m, and 27m) throughout 2020. This involves creating three separate datasets (co2_z1, co2_z2, co2_z3) where we: (1) convert timestamps to dates, (2) filter for 2020 measurements, and (3) compute daily mean CO₂ values while handling any missing data. These daily CO₂ averages are then joined to their corresponding zone datasets (zone1_data, zone2_data, zone3_data) which already contain the daily temperature and humidity measurements.
+To analyze daily carbondioxide dynamics across the rainforest zones, we first process the raw sensor data to calculate daily average CO₂ concentrations for each vertical zone (1m, 13m, and 27m) throughout 2020 and 2019. This involves creating three separate datasets (co2_z1, co2_z2, co2_z3) where we: (1) convert timestamps to dates, (2) filter for 2020 measurements, and (3) compute daily mean CO₂ values while handling any missing data. These daily CO₂ averages are then joined to their corresponding zone datasets (zone1_data, zone2_data, zone3_data) which already contain the daily temperature and humidity measurements.
 
 For accurate gas calculations, we convert all temperatures from Celsius to Kelvin by adding 273.15 to each daily temperature value. Using the ideal gas law (PV = nRT), we then calculate the daily moles of CO₂ in each zone through a dedicated function that: (1) first determines the total moles of air present using n_air = (P × V)/(R × T), where P is pressure (88400 Pa), V is zone volume fraction (26,700 m³ × zone fraction), R is the gas constant (8.314 J/mol·K), and T is temperature in Kelvin; then (2) calculates CO₂ moles by multiplying the total air moles by the CO₂ concentration (in ppm/1,000,000) and the zone's volume fraction (0.304, 0.588, or 0.108).
 
@@ -1680,6 +2309,56 @@ zone3_data <- zone3_data |>
 ```
 
 
+```{r}
+# Step 1: Create daily CO2 average for 2019
+co2_z1_2019 <- co2_zone1_2019 %>%
+  mutate(Date = as.Date(TIMESTAMP), 
+         Year = year(Date)) %>%
+  filter(Year == 2019) %>%
+  group_by(Date) %>%
+  summarize(carbondioxide_z1 = mean(VALUE, na.rm = TRUE), .groups = "drop")
+
+# Step 2: Join on 'Date'
+zone1_data_2019 <- zone1_data_2019 %>%
+  left_join(co2_z1_2019, by = "Date")
+
+# Step 3: Check your dataframe
+head(zone1_data_2019)
+```
+
+
+```{r}
+# Step 1: Create daily CO2 average for 2019
+co2_z2_2019 <- co2_zone2_2019_new %>%
+  mutate(Date = as.Date(TIMESTAMP), 
+         Year = year(Date)) %>%
+  filter(Year == 2019) %>%
+  group_by(Date) %>%
+  summarize(carbondioxide_z2 = mean(VALUE, na.rm = TRUE), .groups = "drop")
+
+# Step 2: Join on Date
+zone2_data_2019 <- zone2_data_2019 %>%
+  left_join(co2_z2_2019, by = "Date")
+
+# Step 3: Check the resulting dataframe
+head(zone2_data_2019)
+```
+```{r}
+# Step 1: Create daily CO2 average for 2019 in zone 3
+co2_z3_2019 <- co2_zone3_2019_new %>%
+  mutate(Date = as.Date(TIMESTAMP), Year = year(Date)) %>%
+  filter(Year == 2019) %>%
+  group_by(Date) %>%
+  summarize(carbondioxide_z3 = mean(VALUE, na.rm = TRUE), .groups = "drop")
+
+# Step 2: Join on Date
+zone3_data_2019 <- zone3_data_2019 %>%
+  left_join(co2_z3_2019, by = "Date")
+
+# Step 3: Check the result
+head(zone3_data_2019)
+```
+
 
 
 ```{r}
@@ -1712,6 +2391,34 @@ zone3_data$Zone_3_CO2_Diff <- c(NA, diff(zone3_data$moles))
 
 ```
 
+```{r}
+#Adding temp with 273K to convert it to kelvin
+zone1_data_2019$Zone_1_Temp_Avg <- (zone1_data_2019$Zone_1_Temp_Avg) + 273.15
+zone2_data_2019$Zone_2_Temp_Avg <- (zone2_data_2019$Zone_2_Temp_Avg) + 273.15
+zone3_data_2019$Zone_3_Temp_Avg <- (zone3_data_2019$Zone_3_Temp_Avg) + 273.15
+
+
+
+# Creating a new column named moles in the zone1_data
+zone1_data_2019 <- zone1_data_2019 |>
+  mutate(moles = co2_moles(carbondioxide_z1, Zone_1_Temp_Avg, vol_fracs[1]))
+
+# Creating a new column named moles in the zone2_data
+zone2_data_2019 <- zone2_data_2019 |>
+  mutate(moles = co2_moles(carbondioxide_z2, Zone_2_Temp_Avg, vol_fracs[2]))
+
+# Creating a new column named moles in the zone3_data
+zone3_data_2019 <- zone3_data_2019 |>
+  mutate(moles = co2_moles(carbondioxide_z3, Zone_3_Temp_Avg, vol_fracs[3]))
+
+
+
+#Zone 1,2,3 difference of moles calculated between consective dates
+zone1_data_2019$Zone_1_CO2_Diff <- c(NA, diff(zone1_data_2019$moles))
+zone2_data_2019$Zone_2_CO2_Diff <- c(NA, diff(zone2_data_2019$moles))
+zone3_data_2019$Zone_3_CO2_Diff <- c(NA, diff(zone3_data_2019$moles))
+```
+
 
 
 
@@ -1727,7 +2434,19 @@ zone3_minute_data <- co2_zone3 |> mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, forma
 
 ```
 
+```{r}
+zone1_minute_data_2019 <- co2_zone1_2019 %>%
+  mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S")) %>%
+  filter(year(TIMESTAMP) == 2019)
 
+zone2_minute_data_2019 <- co2_zone2_2019_new %>%
+  mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S")) %>%
+  filter(year(TIMESTAMP) == 2019)
+
+zone3_minute_data_2019 <- co2_zone3_2019_new %>%
+  mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S")) %>%
+  filter(year(TIMESTAMP) == 2019)
+```
 
 ```{r}
 
@@ -1762,6 +2481,40 @@ zone2_minute_data <- co2_zone2 %>%
   filter(year(TIMESTAMP) == 2020)
 ```
 
+```{r}
+
+# Prepare Zone 1 temp and humidity for 2019
+zone1_temp_humid_2019 <- s_temp_2019 %>%
+  select(DateTime, T_S_100_Corr, T_S_300_Corr) %>%
+  left_join(
+    ne_temp_2019 %>%
+      select(DateTime, T_NE_100_Corr, T_NE_300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    s_humid_2019 %>%
+      select(DateTime, RH_S_100_Corr, RH_S_300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    ne_humid_2019 %>%
+      select(DateTime, RH_NE_100_Corr, RH_NE_300_Corr),
+    by = "DateTime"
+  ) %>%
+  mutate(
+    TIMESTAMP = as.POSIXct(DateTime, format = "%Y/%m/%d %H:%M"),
+    Temp_Avg = rowMeans(select(., T_S_100_Corr, T_S_300_Corr, T_NE_100_Corr, T_NE_300_Corr), na.rm = TRUE),
+    RH_Avg = rowMeans(select(., RH_S_100_Corr, RH_S_300_Corr, RH_NE_100_Corr, RH_NE_300_Corr), na.rm = TRUE)
+  ) %>%
+  select(TIMESTAMP, Temp_Avg, RH_Avg)
+
+# Prepare Zone 2 CO₂ minute data for 2019
+zone2_minute_data_2019 <- co2_zone2 %>%
+  mutate(TIMESTAMP = as.POSIXct(TIMESTAMP, format = "%Y/%m/%d %H:%M:%S")) %>%
+  filter(year(TIMESTAMP) == 2019)
+head(zone2_minute_data_2019)
+
+```
 
 
 ```{r}
@@ -1806,6 +2559,46 @@ zone2_temp_humid <- nw_temp_2020 %>%
 ```
 
 ```{r}
+zone2_temp_humid_2019 <- nw_temp_2019_new %>%
+  select(DateTime, T_NW_100_Corr, T_NW_300_Corr, T_NW_700_Corr) %>%
+  left_join(
+    s_temp_2019 %>% select(DateTime, T_S_700_Corr, T_S_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    ne_temp_2019 %>% select(DateTime, T_NE_700_Corr, T_NE_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    mtn_temp_2019 %>% select(DateTime, T_MTN_100_Corr, T_MTN_300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    nw_humid_2019_new %>% select(DateTime, RH_NW_100_Corr, RH_NW_300_Corr, RH_NW_700_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    s_humid_2019 %>% select(DateTime, RH_S_700_Corr, RH_S_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    ne_humid_2019 %>% select(DateTime, RH_NE_700_Corr, RH_NE_1300_Corr),
+    by = "DateTime"
+  ) %>%
+  left_join(
+    mtn_humid_2019 %>% select(DateTime, RH_MTN_100_Corr, RH_MTN_300_Corr),
+    by = "DateTime"
+  ) %>%
+  mutate(
+    TIMESTAMP = as.POSIXct(DateTime, format = "%Y/%m/%d %H:%M"),
+    Temp_Avg = rowMeans(select(., starts_with("T_")), na.rm = TRUE),
+    RH_Avg = rowMeans(select(., starts_with("RH_")), na.rm = TRUE)
+  ) %>%
+  select(TIMESTAMP, Temp_Avg, RH_Avg)
+
+```
+
+```{r}
 zone3_temp_humid <- ne_temp_2020 %>% select(DateTime, T_NE_2000_Corr) %>% 
   left_join(
     s_temp_2020 %>% select(DateTime, T_S_2000_Corr), by = "DateTime"
@@ -1837,6 +2630,38 @@ zone3_temp_humid <- ne_temp_2020 %>% select(DateTime, T_NE_2000_Corr) %>%
 
 ```
 
+```{r}
+zone3_temp_humid_2019 <- ne_temp_2019 %>% 
+  select(DateTime, T_NE_2000_Corr) %>% 
+  left_join(
+    s_temp_2019 %>% select(DateTime, T_S_2000_Corr), by = "DateTime"
+  ) %>%
+  left_join(
+    nw_temp_2019_new %>% select(DateTime, T_NW_1300_Corr), by = "DateTime"
+  ) %>%
+  left_join(
+    mtn_temp_2019 %>% select(DateTime, T_MTN_700_Corr, T_MTN_1300_Corr), by = 'DateTime'
+  ) %>%
+  left_join(
+    s_humid_2019 %>% select(DateTime, RH_S_2000_Corr), by = "DateTime"
+  ) %>%
+  left_join(
+    nw_humid_2019_new %>% select(DateTime, RH_NW_1300_Corr), by = "DateTime"
+  ) %>%
+  left_join(
+    ne_humid_2019 %>% select(DateTime, RH_NE_2000_Corr), by = "DateTime"
+  ) %>%
+  left_join(
+    mtn_humid_2019 %>% select(DateTime, RH_MTN_700_Corr, RH_MTN_1300_Corr), by = "DateTime"
+  ) %>%
+  mutate(
+    TIMESTAMP = as.POSIXct(DateTime, format= "%Y/%m/%d %H:%M"),
+    Temp_Avg = rowMeans(select(., starts_with("T_")), na.rm = TRUE),
+    Humid_Avg = rowMeans(select(., starts_with("RH_")), na.rm = TRUE)
+  ) %>%
+  select(TIMESTAMP, Temp_Avg, Humid_Avg)
+
+```
 
 ```{r}
 zone1_minute_data <- zone1_temp_humid %>%
@@ -1851,6 +2676,18 @@ zone3_minute_data <- zone3_temp_humid %>%
 
 ```
 
+```{r}
+zone1_minute_data_2019 <- zone1_temp_humid_2019 %>%
+  left_join(zone1_minute_data_2019, by = "TIMESTAMP")
+
+zone2_minute_data_2019 <- zone2_temp_humid_2019 %>%
+  left_join(zone2_minute_data_2019, by = "TIMESTAMP")
+
+zone3_minute_data_2019 <- zone3_temp_humid_2019 %>%
+  left_join(zone3_minute_data_2019, by = "TIMESTAMP")
+
+```
+
 
 ```{r}
 
@@ -1860,6 +2697,12 @@ zone3_minute_data <- zone3_minute_data |> mutate(Temp_Avg = Temp_Avg + 273.15)
 
 ```
 
+```{r}
+zone1_minute_data_2019 <- zone1_minute_data_2019 |> mutate(Temp_Avg = Temp_Avg + 273.15)
+zone2_minute_data_2019 <- zone2_minute_data_2019 |> mutate(Temp_Avg = Temp_Avg + 273.15)
+zone3_minute_data_2019 <- zone3_minute_data_2019 |> mutate(Temp_Avg = Temp_Avg + 273.15)
+
+```
 
 ```{r}
 zone1_minute_data <- zone1_minute_data |> mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[1]))
@@ -1867,6 +2710,18 @@ zone1_minute_data <- zone1_minute_data |> mutate(moles = co2_moles(VALUE, Temp_A
 zone2_minute_data <- zone2_minute_data |> mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[2]))
 
 zone3_minute_data <- zone3_minute_data |> mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[3]))
+```
+
+```{r}
+zone1_minute_data_2019 <- zone1_minute_data_2019 |> 
+  mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[1]))
+
+zone2_minute_data_2019 <- zone2_minute_data_2019 |> 
+  mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[2]))
+
+zone3_minute_data_2019 <- zone3_minute_data_2019 |> 
+  mutate(moles = co2_moles(VALUE, Temp_Avg, vol_fracs[3]))
+
 ```
 
 
@@ -1879,7 +2734,12 @@ zone3_minute_data$diff_moles <- c(NA, diff(zone3_minute_data$moles))
 ```
 
 
+```{r}
+zone1_minute_data_2019$diff_moles <- c(NA, diff(zone1_minute_data_2019$moles))
+zone2_minute_data_2019$diff_moles <- c(NA, diff(zone2_minute_data_2019$moles))
+zone3_minute_data_2019$diff_moles <- c(NA, diff(zone3_minute_data_2019$moles))
 
+```
 ###  Merging Data from All Three Zones
 This merged minute moles dataframe selects the relevant columns from each zone (timestamp and diff_moles), renames them for clarity, and merges them into one data frame. Finally, it calculates the total mole difference across all three zones for every 15 min in the year of 2020 from Jan to Mar each day with 96 readings.
 
@@ -1903,6 +2763,41 @@ merged_min_moles <- Reduce(function(x, y) merge(x, y, by = "TIMESTAMP", all = TR
 merged_min_moles$total_diff_moles <- rowSums(merged_min_moles[, c("diff_moles_z1", "diff_moles_z2", "diff_moles_z3")], na.rm = TRUE)
 
 
+
+```
+calculating mole diffrerences across all three zones for every 15 minutes for the 2019 year.
+```{r}
+# Select TIMESTAMP and diff_moles columns for each zone's 2019 data
+zone1_min_sub_2019 <- zone1_minute_data_2019[, c("TIMESTAMP", "diff_moles")]
+zone2_min_sub_2019 <- zone2_minute_data_2019[, c("TIMESTAMP", "diff_moles")]
+zone3_min_sub_2019 <- zone3_minute_data_2019[, c("TIMESTAMP", "diff_moles")]
+
+# Rename the diff_moles column to zone-specific names
+colnames(zone1_min_sub_2019)[2] <- "diff_moles_z1"
+colnames(zone2_min_sub_2019)[2] <- "diff_moles_z2"
+colnames(zone3_min_sub_2019)[2] <- "diff_moles_z3"
+
+# Merge the three dataframes on TIMESTAMP with a full outer join
+merged_min_moles_2019 <- Reduce(function(x, y) merge(x, y, by = "TIMESTAMP", all = TRUE),
+                               list(zone1_min_sub_2019, zone2_min_sub_2019, zone3_min_sub_2019))
+
+# Sum the diff_moles values across all zones, ignoring NAs
+merged_min_moles_2019$total_diff_moles <- rowSums(merged_min_moles_2019[, c("diff_moles_z1", "diff_moles_z2", "diff_moles_z3")], na.rm = TRUE)
+
+
+```
+
+Time Series Plot of Total CO₂ Mole Differences for 2019 data
+```{r}
+
+ggplot(merged_min_moles_2019, aes(x = TIMESTAMP, y = total_diff_moles)) +
+  geom_line(color = "#C18CAF") +
+  labs(
+    title = "Time Series of Total CO2 Mole Differences (2019)",
+    x = "Date",
+    y = "Total Difference in Moles of CO2"
+  ) +
+  theme_minimal()
 
 ```
 
